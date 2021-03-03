@@ -17,7 +17,7 @@ void initPcbs(){
 	next = puntatore + campo;
 	prev = next + campo;
 	*next = *prev = pcbFree_h;
-
+//cazzofigapopo
 	static pcb_t *tmp;
 
 	for(int i = 1; i < MAXPROC; i++){
@@ -57,4 +57,3 @@ void freePcb(pcb_t *new){
 
 	pcbFree_h = new;
 }
-
