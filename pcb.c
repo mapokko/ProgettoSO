@@ -9,57 +9,6 @@ static pcb_t *pcbFree_h;
 static uint campo = sizeof(pcb_PTR);
 static uint processo = sizeof(pcb_t);
 
-/*void initPcbs(){
-	static memaddr *puntatore, *next, *prev;
-
-	puntatore = pcbFree_table;
-	pcbFree_h = puntatore;
-	next = puntatore + campo;
-	prev = next + campo;
-	*next = *prev = pcbFree_h;
-
-	static memaddr *test;
-	test = pcbFree_table + processo * 20;
-
-	static pcb_t *tmp;
-
-	for(int i = 1; i < MAXPROC; i++){
-		puntatore = puntatore + processo;
-		tmp = puntatore;
-		freePcb(tmp);
-	}
-
-	return;
-}*/
-
-/*void freePcb(pcb_t *new){
-	static pcb_t *control;
-
-	static memaddr *p ,*head;
-	head = pcbFree_h;
-	p = new;
-
-	static memaddr *next2, *prev2, *headnext;
-	headnext = head + campo;
-	control = *headnext;
-
-	next2 = p + campo;
-	prev2 = next2 + campo;
-
-	*next2 = control;
-
-	*prev2 = pcbFree_h;
-
-	p = control;
-	prev2 = p + (campo * 2);
-	*prev2 = new;
-
-	p = pcbFree_h;
-	next2 = p + campo;
-	*next2 = new;
-
-	pcbFree_h = new;
-}*/
 
 //TUTTE LE VARIABILI SONO STATIC PER MOTIVI DI DEBUG, PER FAVORE DICHIARATE LE VARIABILI COME STATIC!!
 //al termine del progetto li togliamo tutti
