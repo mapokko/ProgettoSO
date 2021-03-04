@@ -17,13 +17,13 @@ static uint processo = sizeof(pcb_t);
 void initPcbs(){
 	initHead();
 	
-	static memaddr *contatore, *dimpProcesso;
-	dimpProcesso = processo;
+	static memaddr *contatore;
 
 	contatore = pcbFree_table;
 	contatore  = (uint) contatore + processo;
 
 	static pcb_t *pcbPointer;
+
 	for(int i = 1; i < MAXPROC; i++){
 		pcbPointer = contatore;
 		freePcb(pcbPointer);
@@ -60,6 +60,8 @@ void initHead(){
 	//deve sempre essere di type pcb_t *
 }
 
+//il pcb puntato fa p viene reinserito nella lista dei pcb liberi alla cui testa
+//punta pcbFree_h
 void freePcb(pcb_t *p){
 	//variabili necessarie per gestire l'aggiunta del pcb puntato da *p
 	static memaddr *newPcb, *next, *prev, *tailAddress;
@@ -94,19 +96,37 @@ void freePcb(pcb_t *p){
 
 //WORK IN PROGRESS
 pcb_t *allocPcb(){
-	if (isEmpty()){
+	if(pcbFree_h == NULL){
 		return NULL;
+	}
+	else if (isOneLeft()){
+
+		setValues(pcbFree_h);
+		static pcb_t *toReturn;
+
+		toReturn = pcbFree_h;
+		pcbFree_h = NULL;
+		return toReturn;
 	}
 	else{
 		pcb_t *toReturn;
 		toReturn = pcbFree_h;
+
+		static memaddr *next1, *head;
+
+		head = toReturn;
+		next1 = (uint)head;
+
+		
+
+
 
 
 	}
 }
 
 //WORK IN PROGRESS
-int isEmpty(){
+int isOneLeft(){
 	static memaddr *next;
 	static pcb_t *compare;
 	next = pcbFree_h;
