@@ -15,19 +15,23 @@ static uint processo = sizeof(pcb_t);
 
 //devo ancora commentare questa funzione
 void initPcbs(){
+	//chiamo la funzione initHead, che inizializza il puntatore alla testa 
+	//e imposta i cmapi p_next e p_prev del primo elemento dell'array
 	initHead();
 	
+	//variabile che serve per sapere via via gli indirizzo di mem
+	//dove cominciano i pcb
 	static memaddr *contatore;
 
+	//inizializzo contatore in modo che punti al secondo pcb dell'array
 	contatore = pcbFree_table;
 	contatore  = (uint) contatore + processo;
 
+	//variabile che serve per puntare via via tutti i pcb dell'array
 	static pcb_t *pcbPointer;
 
-	contatore = pcbFree_table;
-	contatore  = (uint) contatore + processo;
-
-	static pcb_t *pcbPointer;
+	//effettuo un ciclo che fa uno scan di tutti i pcb dentro il vettore e 
+	//li inserisce nella lista alla cui testa punta pcbFree_h
 	for(int i = 1; i < MAXPROC; i++){
 		pcbPointer = contatore;
 		freePcb(pcbPointer);
