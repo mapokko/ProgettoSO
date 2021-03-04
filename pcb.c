@@ -3,7 +3,7 @@
 #include <pandos_const.h>
 
 #define MAXPROC 20
-
+//cioane
 static pcb_t pcbFree_table[MAXPROC];
 static pcb_t *pcbFree_h;
 static unsigned int campo = sizeof(pcb_PTR);
