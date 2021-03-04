@@ -10,6 +10,7 @@
 #include <umps3/umps/types.h>
 #include <pandos_const.h>
 
+typedef unsigned int uint;
 typedef signed int cpu_t;
 typedef unsigned int memaddr;
 
