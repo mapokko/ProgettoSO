@@ -102,6 +102,25 @@ void freePcb(pcb_t *p){
 	pcbFree_h = p;
 }
 
+//WORK IN PROGRESS: teoricamente dovrebbe essere tutto qui, ma non ho ancora testato
+pcb_t *mkEmpyProcQ(){
+	pcb_t *toReturn;
+
+	return toReturn;
+}
+
+//WORK IN PROGESS: completato ma non so se funziona
+int emptyProcQ(pcb_t *tp){
+	if(tp == NULL){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+
+
 //WORK IN PROGRESS
 pcb_t *allocPcb(){
 	if(pcbFree_h == NULL){
