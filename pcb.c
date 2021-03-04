@@ -24,6 +24,10 @@ void initPcbs(){
 
 	static pcb_t *pcbPointer;
 
+	contatore = pcbFree_table;
+	contatore  = (uint) contatore + processo;
+
+	static pcb_t *pcbPointer;
 	for(int i = 1; i < MAXPROC; i++){
 		pcbPointer = contatore;
 		freePcb(pcbPointer);
