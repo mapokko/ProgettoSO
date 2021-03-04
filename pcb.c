@@ -100,8 +100,6 @@ pcb_t *allocPcb(){
 		return NULL;
 	}
 	else if (isOneLeft()){
-
-		setValues(pcbFree_h);
 		static pcb_t *toReturn;
 
 		toReturn = pcbFree_h;
@@ -117,7 +115,7 @@ pcb_t *allocPcb(){
 		head = toReturn;
 		next1 = (uint)head;
 
-		
+
 
 
 
