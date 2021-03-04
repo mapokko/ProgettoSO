@@ -1,0 +1,5 @@
+Ho fatto un repurpose del file test.
+
+Se ci sono delle comunicazioni particolari scrivetele qui:
+
+FABIO: ho parlato con Nico e si occuperà lui della funzione allocPcb :)
