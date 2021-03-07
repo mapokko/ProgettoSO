@@ -6,137 +6,225 @@
 
 static pcb_t pcbFree_table[MAXPROC];
 static pcb_t *pcbFree_h;
-static uint campo = sizeof(pcb_PTR);
+
+/*processo è il valore usato per indicare la dimensione occupata da un pcb, ovvero la dimensione di una singola cella
+  dentro pcbFree_table. E' usato per calcolare l'offset per raggiungere i diversi inidirizzi in ci cominciano le
+  celle, ovvero i pcb di pcbFree_table*/
 static uint processo = sizeof(pcb_t);
 
 
 //TUTTE LE VARIABILI SONO STATIC PER MOTIVI DI DEBUG, PER FAVORE DICHIARATE LE VARIABILI COME STATIC!!
 //al termine del progetto li togliamo tutti
 
-//devo ancora commentare questa funzione
+/*inizializza la lista dei pcb liberi aggiungendo tutti i pcb contenuti in pcbFree_table e alla testa
+  di questa lista punta pcbFree_h. Notiamo che la lista dei pcb liberi è una lista monodirezionale collegata
+  con dal campo p_next mentre il campo p_prev è settato a 0. La lista termina con l'ultimo pcb che punta a NULL*/
 void initPcbs(){
-	//chiamo la funzione initHead, che inizializza il puntatore alla testa 
-	//e imposta i cmapi p_next e p_prev del primo elemento dell'array
-	initHead();
-	
-	//variabile che serve per sapere via via gli indirizzo di mem
-	//dove cominciano i pcb
-	static memaddr *contatore;
+	initHead(pcbFree_table);
 
-	//inizializzo contatore in modo che punti al secondo pcb dell'array
-	contatore = pcbFree_table;
-	contatore  = (uint) contatore + processo;
-
-	//variabile che serve per puntare via via tutti i pcb dell'array
+	//pcbPoitner è un puntatore a pcb che serve per scorrere via via l'array di pcbFree_table in modo da puntare
+	//i processi in pcbFree_table
 	static pcb_t *pcbPointer;
 
-	//effettuo un ciclo che fa uno scan di tutti i pcb dentro il vettore e 
-	//li inserisce nella lista alla cui testa punta pcbFree_h
 	for(int i = 1; i < MAXPROC; i++){
-		pcbPointer = contatore;
+		//in particolare, usiamo l'indirizzo di inizio da cui cominciano le celle di pcbFree_table e usiamo un offset
+		//via via crescente per identificare l'indirizzo dove cominciano le varie celle
+		pcbPointer = (uint) pcbFree_table + processo * i;
+		//viene usata la funzione freePcb per inserire i vari pcb puntati da pcbPointer all'interno della lista di pcb libero
+		//la cui testa è puntata da pcbFree_h
 		freePcb(pcbPointer);
-
-		contatore  = (uint) contatore + processo; 
 	}
-	
-
 }
 
-//inizializza il puntatore alla testa della lista circolare e setta anche 
-//i campi next e prev del primo elemento del array pcbFree_table in modo che puntino al pcb stesso
-void initHead(){
-	//variabili di indirizzi di memoria
-	static memaddr *pointToFirst, *next, *prev;
-
-	//inizializzo pointToFirst con l'indirizo di memoria dove comincia il primo pcb dell'array
-	pointToFirst = pcbFree_table;
-
-	//inizializzo il puntatore del alla tesat della lista, dandogli appunto l'indirizzo della testa della lista
-	pcbFree_h = pointToFirst;
-
-	//setto i puntatori next e prev con l'indirizzo di memoria dei campi p_next e p_prev
-	//così che quando li dereferenzio, poso cambiare il valore nella cella di memoria
-	//puntata da loro
-	next = (uint)pointToFirst;
-	prev = (uint)pointToFirst + campo;
-
-	//infine qua avviene la dereferenziazzione, assegnano i puntatoti p_next e p_prev del primo pcb
-	//in modo che puntino al pcb stesso
-	*next = *prev = pcbFree_h;
-
-	//N.B.: ho visto che quando si dereferenziano i dei puntatori interni della struttura, la right-side-value
-	//deve sempre essere di type pcb_t *
-}
-
-//il pcb puntato fa p viene reinserito nella lista dei pcb liberi alla cui testa
-//punta pcbFree_h
+/*questa fuzione prende il pcb puntato da p e lo inserisce alla testa della lista dei pcb liberi, aggiornando poi pcbFree_h*/
 void freePcb(pcb_t *p){
-	//variabili necessarie per gestire l'aggiunta del pcb puntato da *p
-	static memaddr *newPcb, *next, *prev, *tailAddress;
-	static pcb_t *tail;
-
-	//al termine di queste due operazioni, tail conterrà l'indirizzo di memoria dove comincia la coda
-	tailAddress = pcbFree_h;
-	tail = *tailAddress;
-
-	//queste operazioni settano next e prev con gli indirizzi dei campi p_next e p_prev
-	//del pcb da inserire nella lista
-	newPcb = p;
-	next = (uint)newPcb;
-	prev = (uint)newPcb + campo;
-
-	//vengono settati i puntotaori dei campi del pcb da reinserire
-	*next = tail;
-	*prev = pcbFree_h;
-
-	//viene settato il p_next della vecchia testa della lisat in modo che
-	//punti al pcb da inserire
-	next = pcbFree_h;
-	*next = p;
-
-	//analogo del campo p_prev della coda
-	prev = (uint)tail + campo;
-	*prev = p;
-
-	//imposto il pcb inserito come la nuova coda
+	//viene prima di tutto verificato se la lista dei pcb è completamente vuota, in tal caso si riutilizza la funzione per 
+	//inizializzare la testa
+	if (pcbFree_h == NULL){
+		initHead(p);
+		return;
+	}
+	//viene chiamata la fuzione setPointers che si occupa di impostare i puntatori di di p, mettendo nel suo campo p_next
+	//l'indirizzo del pcb puntato al momento dal puntatore alla tesat della lista
+	setPointers(p, pcbFree_h, 0);
+	//viene poi aggiornata la testa dei pcb liberi
 	pcbFree_h = p;
 }
 
-//WORK IN PROGRESS
+/*qusta funzione di occupa di estrarre un pcb dalla lista dei pcb liberi e resituirla. Se la lista è vuota restituisce NULL*/
 pcb_t *allocPcb(){
-	if(pcbFree_h == NULL){
+	//viene prima verificata se la lista è vuota o meno. Nel primo caso viene subito restituito NULL
+	if (emptyProcQ(pcbFree_h)){
 		return NULL;
 	}
-	else if (isOneLeft()){
-		static pcb_t *toReturn;
+	//viene utilizata la variabile toReturn per mantere un puntatore al pcb che deve essere restituito
+	static pcb_t *toReturn;
+	toReturn = pcbFree_h;
+	
+	//viene aggiornato il puntatore alla testa della lista dei pcb liberi
+	pcbFree_h = pcbFree_h->p_next;
 
-		toReturn = pcbFree_h;
-		pcbFree_h = NULL;
-		return toReturn;
+	//vengono impostato i valori del pcb da restituire
+	setValues(toReturn);
+	return toReturn;
+}
+
+/*questa funzione si occupa di tonare un valor da impostare il puntatore  ad una nuova coda di processi che è al momento vuota,
+  in particolare vediamo che il puntatore ad una coda dei processi viene inizializzata con NULL*/
+pcb_t *mkEmptyProcQ(){
+	return NULL;
+}
+
+/*questa funzione verifica se il puntatore a pcb tp punta ad un pcb o non punta a nulla*/
+int emptyProcQ(pcb_t *tp){
+	if(tp == NULL){
+		return 1;
 	}
 	else{
-		pcb_t *toReturn;
-		toReturn = pcbFree_h;
-
-		static memaddr *next1, *head;
-
-		head = toReturn;
-		next1 = (uint)head;
-
-
-
-
-
-
+		return 0;
 	}
 }
 
-//WORK IN PROGRESS
-int isOneLeft(){
-	static memaddr *next;
-	static pcb_t *compare;
-	next = pcbFree_h;
-	compare = *next;
+/*questa funzione si occupa di inserire il pcb puntato da p, nella lista di processi il cui puntatore alla coda è puntato
+da tp. In particolare si occupa di inizializzare la coda dei processi nel casoil puntatore puntato da tp non punti a nulla.*/
+void insertProcQ(pcb_t **tp, pcb_t *p){
+	//viene verificato se il puntatore puntato da tp punta effettivamente a qualcosa o se deve essere inizializzata
+	if(emptyProcQ(*tp)){
+		//questa è una funzione che inizalizza il puntatore a una coda di processi
+		initTail(tp, p);
+		return;
+	}
 
-	return !(compare == pcbFree_h);
+	//viene usata una variabile ausiliaria per manipoalare i campi del pcb puntato dal puntatore alla coda,
+	//che è a sua volta puntato da tp. Per questo motivo a tail si assegna *tp e non tp e basta
+	static pcb_t *tail; 
+	tail = *tp;
+
+	//queste tre invocazioni impostano i campi p_next e p_prev rispettivamente di: il nuovo pcb puntato da p, il pcb
+	//puntato dal puntatore alla coda e infine il pcb che si trova alla testa della coda, il cui campo p_next deve essere
+	//aggiornata puntando al nuovo pcb in testa
+	setPointers(p, tail, tail->p_prev);
+	setPointers(tail, tail->p_next, p);
+	setPointers(p->p_prev, p, p->p_prev->p_prev);
 }
+
+/*questa funzione prende un puntatore al puntatore alla coda di una coda dei processi e si occupa di ritornare un puntatore
+  al pcb che si trova in testa alla cosa dei processi*/
+pcb_t *headProcQ(pcb_t **tp){
+	//si verifica innazitutto se il puntatore alla cosa sta effettivamente puntando alla coda
+	if (*tp == NULL){
+		return NULL;
+	}
+	//si usa una variabile intermedia per accedera i campi interni del pcb in fondo alla coda e si utilizza dil cuo campo
+	//p_prev per risalire alla testa
+	static pcb_t *tail;
+	tail = *tp;
+	return tail->p_prev;
+}
+
+/*questa funzione si occupa di rimuovere il pcb che si trova in fondo alla coda della coda dei processi puntata dal
+  puntatore alla coda puntato da tp*/
+pcb_t* removeProcQ(pcb_t **tp){
+	//viene prima verificato se è possibile rimuovere un pcb dalla coda, cioè se la coda è vuota o meno
+	if(emptyProcQ(*tp)){
+		return NULL;
+	}
+
+	//definiamo una variabile ausiliaria per manipolare i campo interni del puntatore passato ttraverso tp
+	static pcb_t *tailPtr;
+	tailPtr = *tp;
+
+	//nel caso il puntatore contenga un solo elemento, facciamo in modo che in puntatore alla coda di pcb
+	//punti a NULL poiché da quinon contiene più elementi
+	if(tailPtr == tailPtr->p_next){
+		*tp = NULL;
+	}
+	//se invece contiene elementi, facciamo aggioraniamo i puntatori del pcb in testa alla coda e aggioraniamo l'elemento
+	//in fondo alla coda
+	else{
+		setPointers(tailPtr->p_next, tailPtr->p_next->p_next, tailPtr->p_prev);
+		setPointers(tailPtr->p_prev, tailPtr->p_next, tailPtr->p_prev->p_prev);
+		*tp = tailPtr->p_next;
+	}
+
+	//infine ritorniao il puntatore allìelemtno appna estratto dalla coda
+	return tailPtr;
+}
+
+/*questa funzione prmette di estrarre dalla cosa di pcb puntato dal puntatore contenuto in tp in modo da estarre esattamente il pcb
+  puntato da p, che si può trovare in qualunque posizione dentro la cosa. In particolare, se p non è presente nella cosa contenuta in tp,
+allora ritoriamo NULL;*/
+pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
+	//verifichiamo se p è presente nella coda puntata da tp usanod una funzione ausiliaria
+	if(!isPresent(*tp, p)){
+		return NULL;
+	}
+
+	//se p è contenuto nella coda passata attraverso tp, allora aggiunstiamo i puntatori dei pcb prima e dopo p
+	setPointers(p->p_next, p->p_next->p_next, p->p_prev);
+	setPointers(p->p_prev, p->p_next, p->p_prev->p_prev);
+
+	//in particolare, se p punta al pcb che si trova in fondo alla cosa, aggiorniamo anche il puntatore alla coda associato
+	//alla coda passata
+	if(p == *tp){
+		*tp = p->p_next;
+	}
+	
+	return p;
+}
+
+/*DA QUI SOTTO COMINCIANO FUNZIONI AUSILIARE PER IL FUNZIONAMENTO DI QUELLE RICHIESTE.
+  FEEL FREE TO USE THEM AS YOU LIKE!*/
+
+/*questa funzione si occupa di impostare i campi p_next e p_rev del pcb il cui indirizzo è contenuto in ProcessPtr
+  il pcb setNext diventa quello puntato dal campo p_next e il pcb p_prev punta al pcb puntato dal campo setPrev*/
+void setPointers(pcb_t *processPtr,pcb_t *setNext, pcb_t *setPrev){
+	processPtr->p_next = setNext;
+	processPtr->p_prev = setPrev;
+}
+
+/*questa funzione si occupa di impostare il puntatore pcbFree_h quando la lista dei pcb liberi è completamente vuota,
+  ovvero pcbFree_h sta puntando a NULL*/
+void initHead(memaddr *pointer){
+	pcbFree_h = pointer;
+	setPointers(pcbFree_h, NULL, 0);
+}
+
+/*questa funzione si occupa di impostare tutti i campi dei puntatori dentro al pcb a 0. Osserviamo che imposta anche il
+  che serve poi per mantnere l'indirisso del semaforo ad esso associato*/
+void setValues(pcb_t *pointer){
+	pointer->p_prev = 0;
+	pointer->p_next = 0;
+	pointer->p_prnt = 0;
+	pointer->p_child = 0;
+	pointer->p_next_sib = 0;
+	pointer->p_prev_sib = 0;
+	pointer->p_semAdd = 0;
+}
+
+/*questa funzione si occupa di inizializzare la coda dei processi la cui coda punta tailAddress, con il solo pcb puntato da p.
+  In particolare il pcb puntato da p viene inizializzato con con i campi p_next e p_prev che puntano a se stesso*/
+void  initTail(memaddr *tailAddress, pcb_t *p){
+	*tailAddress = p;
+	setPointers(p, p, p);
+}
+
+/*questa funzione ausiliaria prende in input un puntatore a coda i pcb e un puntatroe a un certo pcb, effettua una scansione
+  lineare della coda finché non trova p. Se non lo trova restituisce 0, se lo trova restituisce l'indirizzo in cui si trova*/
+int isPresent(pcb_t *tail, pcb_t *p){
+	//si usa una variabile ausiliaria per confrontare ogni elemento della lista
+	static pcb_t *scanner;
+	scanner = tail;
+	
+	//si confronta p con scanner finché scanner non ritorna a puntare su tail. Osserviamo che se la coda puntata da tail contiene
+	//un solo elemento, il ciclo do while viene eseguito almeno una sola volta, nel caso quel pcb fosse quello ricercato
+	do{
+		if(scanner == p){
+			return 1;
+		}
+		scanner = scanner->p_next;
+	}while(scanner != tail);
+
+	return 0;
+}
+
