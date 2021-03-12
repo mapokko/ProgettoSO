@@ -2,10 +2,8 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
-#define MAXPROC 20
 
-static pcb_t pcbFree_table[MAXPROC];
-static pcb_t *pcbFree_h;
+
 
 /*processo è il valore usato per indicare la dimensione occupata da un pcb, ovvero la dimensione di una singola cella
   dentro pcbFree_table. E' usato per calcolare l'offset per raggiungere i diversi inidirizzi in ci cominciano le
@@ -13,18 +11,19 @@ static pcb_t *pcbFree_h;
 static uint processo = sizeof(pcb_t);
 
 
-//TUTTE LE VARIABILI SONO STATIC PER MOTIVI DI DEBUG, PER FAVORE DICHIARATE LE VARIABILI COME STATIC!!
-//al termine del progetto li togliamo tutti
-
 /*inizializza la lista dei pcb liberi aggiungendo tutti i pcb contenuti in pcbFree_table e alla testa
   di questa lista punta pcbFree_h. Notiamo che la lista dei pcb liberi è una lista monodirezionale collegata
   con dal campo p_next mentre il campo p_prev è settato a 0. La lista termina con l'ultimo pcb che punta a NULL*/
-void initPcbs(){
+extern void initPcbs(){
+	//avviene qui la dichiarazione dlell'array che assegna o spazio di memoria effettiov per tutti i successivi
+	//pcb che verranno manipolato nel corso del resto del programma
+	static pcb_t pcbFree_table[MAXPROC];
+
 	initHead(pcbFree_table);
 
 	//pcbPoitner è un puntatore a pcb che serve per scorrere via via l'array di pcbFree_table in modo da puntare
 	//i processi in pcbFree_table
-	static pcb_t *pcbPointer;
+	pcb_t *pcbPointer;
 
 	for(int i = 1; i < MAXPROC; i++){
 		//in particolare, usiamo l'indirizzo di inizio da cui cominciano le celle di pcbFree_table e usiamo un offset
@@ -37,7 +36,7 @@ void initPcbs(){
 }
 
 /*questa fuzione prende il pcb puntato da p e lo inserisce alla testa della lista dei pcb liberi, aggiornando poi pcbFree_h*/
-void freePcb(pcb_t *p){
+extern void freePcb(pcb_t *p){
 	//viene prima di tutto verificato se la lista dei pcb è completamente vuota, in tal caso si riutilizza la funzione per 
 	//inizializzare la testa
 	if (pcbFree_h == NULL){
@@ -52,13 +51,13 @@ void freePcb(pcb_t *p){
 }
 
 /*qusta funzione di occupa di estrarre un pcb dalla lista dei pcb liberi e resituirla. Se la lista è vuota restituisce NULL*/
-pcb_t *allocPcb(){
+extern pcb_t *allocPcb(){
 	//viene prima verificata se la lista è vuota o meno. Nel primo caso viene subito restituito NULL
 	if (emptyProcQ(pcbFree_h)){
 		return NULL;
 	}
 	//viene utilizata la variabile toReturn per mantere un puntatore al pcb che deve essere restituito
-	static pcb_t *toReturn;
+	pcb_t *toReturn;
 	toReturn = pcbFree_h;
 	
 	//viene aggiornato il puntatore alla testa della lista dei pcb liberi
@@ -71,12 +70,12 @@ pcb_t *allocPcb(){
 
 /*questa funzione si occupa di tonare un valor da impostare il puntatore  ad una nuova coda di processi che è al momento vuota,
   in particolare vediamo che il puntatore ad una coda dei processi viene inizializzata con NULL*/
-pcb_t *mkEmptyProcQ(){
+extern pcb_t *mkEmptyProcQ(){
 	return NULL;
 }
 
 /*questa funzione verifica se il puntatore a pcb tp punta ad un pcb o non punta a nulla*/
-int emptyProcQ(pcb_t *tp){
+extern int emptyProcQ(pcb_t *tp){
 	if(tp == NULL){
 		return 1;
 	}
@@ -87,7 +86,7 @@ int emptyProcQ(pcb_t *tp){
 
 /*questa funzione si occupa di inserire il pcb puntato da p, nella lista di processi il cui puntatore alla coda è puntato
 da tp. In particolare si occupa di inizializzare la coda dei processi nel casoil puntatore puntato da tp non punti a nulla.*/
-void insertProcQ(pcb_t **tp, pcb_t *p){
+extern void insertProcQ(pcb_t **tp, pcb_t *p){
 	//viene verificato se il puntatore puntato da tp punta effettivamente a qualcosa o se deve essere inizializzata
 	if(emptyProcQ(*tp)){
 		//questa è una funzione che inizalizza il puntatore a una coda di processi
@@ -97,7 +96,7 @@ void insertProcQ(pcb_t **tp, pcb_t *p){
 
 	//viene usata una variabile ausiliaria per manipoalare i campi del pcb puntato dal puntatore alla coda,
 	//che è a sua volta puntato da tp. Per questo motivo a tail si assegna *tp e non tp e basta
-	static pcb_t *tail; 
+	pcb_t *tail; 
 	tail = *tp;
 
 	//queste tre invocazioni impostano i campi p_next e p_prev rispettivamente di: il nuovo pcb puntato da p, il pcb
@@ -110,53 +109,32 @@ void insertProcQ(pcb_t **tp, pcb_t *p){
 
 /*questa funzione prende un puntatore al puntatore alla coda di una coda dei processi e si occupa di ritornare un puntatore
   al pcb che si trova in testa alla cosa dei processi*/
-pcb_t *headProcQ(pcb_t **tp){
+extern pcb_t *headProcQ(pcb_t **tp){
 	//si verifica innazitutto se il puntatore alla cosa sta effettivamente puntando alla coda
 	if (*tp == NULL){
 		return NULL;
 	}
 	//si usa una variabile intermedia per accedera i campi interni del pcb in fondo alla coda e si utilizza dil cuo campo
 	//p_prev per risalire alla testa
-	static pcb_t *tail;
+	pcb_t *tail;
 	tail = *tp;
 	return tail->p_prev;
 }
 
-/*questa funzione si occupa di rimuovere il pcb che si trova in fondo alla coda della coda dei processi puntata dal
+/*questa funzione si occupa di rimuovere il pcb che si trova in testa alla coda della coda dei processi puntata dal
   puntatore alla coda puntato da tp*/
-pcb_t* removeProcQ(pcb_t **tp){
-	//viene prima verificato se è possibile rimuovere un pcb dalla coda, cioè se la coda è vuota o meno
-	if(emptyProcQ(*tp)){
-		return NULL;
-	}
-
-	//definiamo una variabile ausiliaria per manipolare i campo interni del puntatore passato ttraverso tp
-	static pcb_t *tailPtr;
-	tailPtr = *tp;
-
-	//nel caso il puntatore contenga un solo elemento, facciamo in modo che in puntatore alla coda di pcb
-	//punti a NULL poiché da quinon contiene più elementi
-	if(tailPtr == tailPtr->p_next){
-		*tp = NULL;
-	}
-	//se invece contiene elementi, facciamo aggioraniamo i puntatori del pcb in testa alla coda e aggioraniamo l'elemento
-	//in fondo alla coda
-	else{
-		setPointers(tailPtr->p_next, tailPtr->p_next->p_next, tailPtr->p_prev);
-		setPointers(tailPtr->p_prev, tailPtr->p_next, tailPtr->p_prev->p_prev);
-		*tp = tailPtr->p_next;
-	}
-
-	//infine ritorniao il puntatore allìelemtno appna estratto dalla coda
-	return tailPtr;
+extern pcb_t* removeProcQ(pcb_t **tp){
+	//semplicemente, la rimozione del pcb che si trova nella codaa da più tempo è un caso particolare di outProcQ, dove il pcb
+	//da rimuovere è quello puntatore dal puntatore alla coda
+	return outProcQ(tp, *tp);
 }
 
-/*questa funzione prmette di estrarre dalla cosa di pcb puntato dal puntatore contenuto in tp in modo da estarre esattamente il pcb
-  puntato da p, che si può trovare in qualunque posizione dentro la cosa. In particolare, se p non è presente nella cosa contenuta in tp,
-allora ritoriamo NULL;*/
-pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
+/*questa funzione permette di estrarre dalla coda di pcb puntato dal puntatore contenuto in tp in modo da estarre esattamente il pcb
+  puntato da p, che si può trovare in qualunque posizione dentro la coda. In particolare, se p non è presente nella cosa contenuta in tp,
+  allora ritoriamo NULL;*/
+extern pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 	//verifichiamo se p è presente nella coda puntata da tp usanod una funzione ausiliaria
-	if(!isPresent(*tp, p)){
+	if(emptyProcQ(*tp) || !isPresent(*tp, p)){
 		return NULL;
 	}
 
@@ -164,17 +142,109 @@ pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 	setPointers(p->p_next, p->p_next->p_next, p->p_prev);
 	setPointers(p->p_prev, p->p_next, p->p_prev->p_prev);
 
-	//in particolare, se p punta al pcb che si trova in fondo alla cosa, aggiorniamo anche il puntatore alla coda associato
-	//alla coda passata
-	if(p == *tp){
+	//verifichiamo se il pcb che stiamo rimovendo è in testa alla cosa, in quel caso aggiorniamo anche il puntatore alla coda. Inoltre
+	//se il pcb che sta venendo rimosso è l'unico presente, mettiamo il puntatore alla coda a NULL
+	if (p == p->p_next){
+		*tp = NULL;
+	}
+	else if(*tp == p){
 		*tp = p->p_next;
 	}
+
+	//infine prima di restituire il pcb, ne settiamo tutti i valori a un valore neutro
+	setValues(p);
 	
 	return p;
 }
 
-/*DA QUI SOTTO COMINCIANO FUNZIONI AUSILIARE PER IL FUNZIONAMENTO DI QUELLE RICHIESTE.
-  FEEL FREE TO USE THEM AS YOU LIKE!*/
+/*questa funzione ritorna TRUE se il pcb passato per parametro non ha figli, FALSE altrimenti*/
+extern int emptyChild(pcb_t *p){
+	return (p->p_child == 0);
+}
+
+/*questa funzione si occupa di inserire il pcb puntato da p come ultimo figlio nella lista dei figli del pcb puntato da prnt
+  in particolare si occupa anche di inizializzare il campo p_child di prnt nel caso non abbia ancora figli*/
+extern void insertChild(pcb_t *prnt, pcb_t *p){
+	//verifichiamo se prnt ha figli o meno
+	if (emptyChild(prnt)){
+		//se non ne ha, inizializza il campo p_child di prnt e inizializza i campi di p
+		prnt->p_child = p;
+		setPointerTree(p, prnt, 0, 0);
+		return;
+	}
+	//si usa una variabile ausiliaria per mantenere l'ultimo figlio di prnt
+	pcb_t *lastChild;
+
+	//si usa una funzione ausiliaria che restituisce l'ultimo figlio dalla lista dei filgi di prnt
+	lastChild = getLastChild(prnt);
+
+	//si correggono i campi dell'ultimo figlio e di p in modo che diventi il nuovo ultimo figlio
+	lastChild->p_next_sib = p;
+	p->p_prev_sib = lastChild;
+	p->p_next_sib = 0;
+
+	//si corregge il campo parent di p in modo che punti a prnt
+	p->p_prnt = prnt;
+	
+}
+
+/*questa funzione rimuove il primo figlio della lista dei figli del pcb puntato da p*/
+extern pcb_t *removeChild(pcb_t *p){
+	//verifichiamo se effettivamente p ha dei figli
+	if(emptyChild(p)){
+		p = NULL;
+	}
+	//se li ha, usiamo la funzione outchild poiché è un caso particolare in cui il pcb da rimuovere è il primo
+	//figlio della lista
+	else{
+		p = outChild(p->p_child);
+	}
+
+	return p;
+}
+
+/*questa funzione si occupa di rimuove il pcb p dalla lista dei figli a cui appartiene, in particolare p può trovarsi
+  in una qualunque posizione all'interno della lista dei figli*/
+extern pcb_t *outChild(pcb_t *p){
+	//verifichiamo se effettivamente p appartiene a una lista di figli
+	if(p->p_prnt == 0){
+		return NULL;
+	}
+
+	//verifichiamo se p è il primo figlio della lista, e in tal caso cambiamo il primo figlio
+	if(p->p_prnt->p_child == p){
+		p->p_prnt->p_child = p->p_next_sib;
+	}
+	//se p non è il primo figlio, allora deve necessariamente avere un prev_sib, quindi correggiamo il suo campo next_sib
+	else{
+		p->p_prev_sib->p_next_sib = p->p_next_sib;
+	}
+
+	//infine verifichiamo se p ha un fratello successico, in tal caso correggiamo il suo campo prev_sib
+	if(p->p_next_sib != 0){
+		p->p_next_sib->p_prev_sib = p->p_prev_sib;
+	}
+
+	//settiamo a valori di p a valori neutri e lo restituiamo
+	setValues(p);
+	return p;
+}
+
+
+
+/*DA QUI SOTTO COMINCIANO FUNZIONI AUSILIARE PER IL FUNZIONAMENTO DI QUELLE RICHIESTE*/
+/*------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+/*questa funzione si occupa di impostare il puntatore pcbFree_h quando la lista dei pcb liberi è completamente vuota,
+  ovvero pcbFree_h sta puntando a NULL*/
+void initHead(memaddr *pointer){
+	pcbFree_h = pointer;
+	setPointers(pcbFree_h, NULL, 0);
+}
+
 
 /*questa funzione si occupa di impostare i campi p_next e p_rev del pcb il cui indirizzo è contenuto in ProcessPtr
   il pcb setNext diventa quello puntato dal campo p_next e il pcb p_prev punta al pcb puntato dal campo setPrev*/
@@ -183,12 +253,6 @@ void setPointers(pcb_t *processPtr,pcb_t *setNext, pcb_t *setPrev){
 	processPtr->p_prev = setPrev;
 }
 
-/*questa funzione si occupa di impostare il puntatore pcbFree_h quando la lista dei pcb liberi è completamente vuota,
-  ovvero pcbFree_h sta puntando a NULL*/
-void initHead(memaddr *pointer){
-	pcbFree_h = pointer;
-	setPointers(pcbFree_h, NULL, 0);
-}
 
 /*questa funzione si occupa di impostare tutti i campi dei puntatori dentro al pcb a 0. Osserviamo che imposta anche il
   che serve poi per mantnere l'indirisso del semaforo ad esso associato*/
@@ -210,10 +274,10 @@ void  initTail(memaddr *tailAddress, pcb_t *p){
 }
 
 /*questa funzione ausiliaria prende in input un puntatore a coda i pcb e un puntatroe a un certo pcb, effettua una scansione
-  lineare della coda finché non trova p. Se non lo trova restituisce 0, se lo trova restituisce l'indirizzo in cui si trova*/
+  lineare della coda finché non trova p. Se non lo trova restituisce 0, se lo trova restituisce 1*/
 int isPresent(pcb_t *tail, pcb_t *p){
 	//si usa una variabile ausiliaria per confrontare ogni elemento della lista
-	static pcb_t *scanner;
+	pcb_t *scanner;
 	scanner = tail;
 	
 	//si confronta p con scanner finché scanner non ritorna a puntare su tail. Osserviamo che se la coda puntata da tail contiene
@@ -226,5 +290,30 @@ int isPresent(pcb_t *tail, pcb_t *p){
 	}while(scanner != tail);
 
 	return 0;
+}
+
+
+/*questa è una funzione ausiliaria che si occupa di settare i campi parent, nextsib, prevsib del pcb passato
+  come parametro*/
+void setPointerTree(pcb_t *p, pcb_t *prnt, pcb_t *nextSib,pcb_t *prevSib){
+	p->p_prnt = prnt;
+	p->p_next_sib = nextSib;
+	p->p_prev_sib = prevSib;
+}
+
+
+/*questa è unz funzione ausiliaria che restituisce l'ultimo filgio dalla lista dei figli del pcb passato
+  come parametro*/
+pcb_t* getLastChild(pcb_t *prnt){
+	//usiamo una variabile ausiliaria per raggiungere l'ultimo figlio attraverso una visita sequenziale della lista dei figli
+	pcb_t *child;
+	//inizializziamo child come primo figlio del pcb passato per parametro
+	child = prnt->p_child;
+
+	//usiamo un ciclo while per raggiungere l'ultimo figlio e lo restituiamo
+	while(child->p_next_sib != 0){
+		child = child->p_next_sib;
+	}
+	return child;
 }
 
