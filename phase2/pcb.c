@@ -8,7 +8,7 @@
 /*processo è il valore usato per indicare la dimensione occupata da un pcb, ovvero la dimensione di una singola cella
   dentro pcbFree_table. E' usato per calcolare l'offset per raggiungere i diversi inidirizzi in ci cominciano le
   celle, ovvero i pcb di pcbFree_table*/
-uint processo = sizeof(pcb_t);
+static uint processo = sizeof(pcb_t);
 
 
 /*inizializza la lista dei pcb liberi aggiungendo tutti i pcb contenuti in pcbFree_table e alla testa
