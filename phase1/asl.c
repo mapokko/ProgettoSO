@@ -3,12 +3,6 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
-/*allochiamo staticamente i semafori usando un array*/
-static semd_t semd_table[MAXPROC];
-
-/*creiamo 4 puntatori, alla testa e alla coda della lista dei semafori liberi, e alla testa e alla coda della lista dei semafori attivi*/
-semd_t *semdFree_h, *semdFree_tail;
-semd_t *semd_h, *semd_tail;
 
 /*manteniamo un valore che corrisponde alla dimensione di un semaforo, usato per inizializzare la lista dei semafori liberi*/
 static uint dimSemaforo = sizeof(semd_t);
@@ -17,6 +11,10 @@ static uint dimSemaforo = sizeof(semd_t);
   liberi alla cui testa punta semdFree_h e alla cui coda punta semdFree_tail. Notamo che i semfaori vengono
   inseriti nella coda e mentre vengono deallocato dalla testa*/
 extern void initASL(){
+
+    /*allochiamo staticamente i semafori usando un array*/
+    static semd_t semd_table[MAXPROC];
+
     //vengono inizializzati i puntatori alla testa e alla coda della lista dei semafori liberi
     semdFree_h = semdFree_tail = semd_table;
 

@@ -3,6 +3,10 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
+    /*creiamo 4 puntatori, alla testa e alla coda della lista dei semafori liberi, e alla testa e alla coda della lista dei semafori attivi*/
+    semd_t *semdFree_h, *semdFree_tail;
+    semd_t *semd_h, *semd_tail;
+
     /*funzioni di generazione e gestione dei semafori*/
     extern void initASL();
     extern int insertBlocked(int *semAdd, pcb_t *p);

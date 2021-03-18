@@ -8,7 +8,7 @@
 /*processo è il valore usato per indicare la dimensione occupata da un pcb, ovvero la dimensione di una singola cella
   dentro pcbFree_table. E' usato per calcolare l'offset per raggiungere i diversi inidirizzi in ci cominciano le
   celle, ovvero i pcb di pcbFree_table*/
-static uint processo = sizeof(pcb_t);
+uint processo = sizeof(pcb_t);
 
 
 /*inizializza la lista dei pcb liberi aggiungendo tutti i pcb contenuti in pcbFree_table e alla testa
@@ -159,7 +159,7 @@ extern pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 
 /*questa funzione ritorna TRUE se il pcb passato per parametro non ha figli, FALSE altrimenti*/
 extern int emptyChild(pcb_t *p){
-	return (p->p_child == 0);
+	return (p->p_child == NULL);
 }
 
 /*questa funzione si occupa di inserire il pcb puntato da p come ultimo figlio nella lista dei figli del pcb puntato da prnt
@@ -169,7 +169,7 @@ extern void insertChild(pcb_t *prnt, pcb_t *p){
 	if (emptyChild(prnt)){
 		//se non ne ha, inizializza il campo p_child di prnt e inizializza i campi di p
 		prnt->p_child = p;
-		setPointerTree(p, prnt, 0, 0);
+		setPointerTree(p, prnt, NULL, NULL);
 		return;
 	}
 	//si usa una variabile ausiliaria per mantenere l'ultimo figlio di prnt
@@ -181,7 +181,7 @@ extern void insertChild(pcb_t *prnt, pcb_t *p){
 	//si correggono i campi dell'ultimo figlio e di p in modo che diventi il nuovo ultimo figlio
 	lastChild->p_next_sib = p;
 	p->p_prev_sib = lastChild;
-	p->p_next_sib = 0;
+	p->p_next_sib = NULL;
 
 	//si corregge il campo parent di p in modo che punti a prnt
 	p->p_prnt = prnt;
@@ -207,7 +207,7 @@ extern pcb_t *removeChild(pcb_t *p){
   in una qualunque posizione all'interno della lista dei figli*/
 extern pcb_t *outChild(pcb_t *p){
 	//verifichiamo se effettivamente p appartiene a una lista di figli
-	if(p->p_prnt == 0){
+	if(p->p_prnt == NULL){
 		return NULL;
 	}
 
@@ -221,7 +221,7 @@ extern pcb_t *outChild(pcb_t *p){
 	}
 
 	//infine verifichiamo se p ha un fratello successico, in tal caso correggiamo il suo campo prev_sib
-	if(p->p_next_sib != 0){
+	if(p->p_next_sib != NULL){
 		p->p_next_sib->p_prev_sib = p->p_prev_sib;
 	}
 
@@ -259,11 +259,11 @@ void setPointers(pcb_t *processPtr,pcb_t *setNext, pcb_t *setPrev){
 void setValues(pcb_t *pointer){
 	pointer->p_prev = 0;
 	pointer->p_next = 0;
-	pointer->p_prnt = 0;
-	pointer->p_child = 0;
-	pointer->p_next_sib = 0;
-	pointer->p_prev_sib = 0;
-	pointer->p_semAdd = 0;
+	pointer->p_prnt = NULL;
+	pointer->p_child = NULL;
+	pointer->p_next_sib = NULL;
+	pointer->p_prev_sib = NULL;
+	pointer->p_semAdd = NULL;
 }
 
 /*questa funzione si occupa di inizializzare la coda dei processi la cui coda punta tailAddress, con il solo pcb puntato da p.
@@ -311,7 +311,7 @@ pcb_t* getLastChild(pcb_t *prnt){
 	child = prnt->p_child;
 
 	//usiamo un ciclo while per raggiungere l'ultimo figlio e lo restituiamo
-	while(child->p_next_sib != 0){
+	while(child->p_next_sib != NULL){
 		child = child->p_next_sib;
 	}
 	return child;
