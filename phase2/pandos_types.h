@@ -10,8 +10,10 @@
 #include <umps3/umps/types.h>
 #include "pandos_const.h"
 
+typedef unsigned int uint;
 typedef signed int   cpu_t;
 typedef unsigned int memaddr;
+typedef state_t *state_PTR;
 
 
 typedef struct context_t {
@@ -39,13 +41,27 @@ typedef struct pcb_t {
         *p_prev_sib;      /* ptr to prev. sibling			*/
 
     /* process status information */
-    state_t p_s;    /* processor state        */
-    cpu_t   p_time; /* cpu time used by proc		*/
+    state_t p_s;                /* processor state        */
+    cpu_t   p_time;             /* cpu time used by proc		*/
 
     /* add more fields here */
-    int *      p_semAdd;
+    int *p_semAdd;
     support_t *p_supportStruct;
 
 } pcb_t, *pcb_PTR;
+
+typedef struct semd_t {
+	/* ptr to next element on queue */
+	struct semd_t *s_next;
+
+	/* ptr to the semaphore */
+	int *s_semAdd;
+
+	/* ptr to tail of the queue of procs.
+	blocked on this sem. */
+	pcb_PTR s_procQ;
+
+} semd_t, *semd_PTR;
+
 
 #endif
