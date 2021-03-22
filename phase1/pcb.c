@@ -85,7 +85,7 @@ extern int emptyProcQ(pcb_t *tp){
 }
 
 /*questa funzione si occupa di inserire il pcb puntato da p, nella lista di processi il cui puntatore alla coda è puntato
-da tp. In particolare si occupa di inizializzare la coda dei processi nel casoil puntatore puntato da tp non punti a nulla.*/
+da tp. In particolare si occupa di inizializzare la coda dei processi nel caso il puntatore puntato da tp non punti a nulla.*/
 extern void insertProcQ(pcb_t **tp, pcb_t *p){
 	//viene verificato se il puntatore puntato da tp punta effettivamente a qualcosa o se deve essere inizializzata
 	if(emptyProcQ(*tp)){

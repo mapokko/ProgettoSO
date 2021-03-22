@@ -43,6 +43,9 @@ extern void freePcb(pcb_t *p){
 		initHead(p);
 		return;
 	}
+	//si resettano tutti i campi del pcb prima di reinserirlo nella lista dei pcb liberi
+	setValues(p);
+
 	//viene chiamata la fuzione setPointers che si occupa di impostare i puntatori di di p, mettendo nel suo campo p_next
 	//l'indirizzo del pcb puntato al momento dal puntatore alla tesat della lista
 	setPointers(p, pcbFree_h, 0);
@@ -264,6 +267,8 @@ void setValues(pcb_t *pointer){
 	pointer->p_next_sib = NULL;
 	pointer->p_prev_sib = NULL;
 	pointer->p_semAdd = NULL;
+	pointer->p_supportStruct = NULL;
+	pointer->p_time = 0;
 }
 
 /*questa funzione si occupa di inizializzare la coda dei processi la cui coda punta tailAddress, con il solo pcb puntato da p.
