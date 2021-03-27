@@ -9,6 +9,14 @@
 
 #include <umps3/umps/const.h>
 
+#define INSTALLEDBASEADDRESS 0X1000002C
+#define INTERRUPTINGBASEADDRESS 0x10000040
+#define DEVICEREGISTERBASE 0x10000054
+
+#define INTERRUPTBITMAP 1
+#define INSTALLEDBITMAP 0
+
+
 /* Hardware & software constants */
 #define PAGESIZE 4096 /* page size in bytes	*/
 #define WORDLEN  4    /* word size in bytes	*/

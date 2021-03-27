@@ -19,6 +19,7 @@ extern void initASL(){
 
     //vengono inizializzati i puntatori alla testa e alla coda della lista dei semafori liberi
     semdFree_h = semdFree_tail = semd_table;
+    semdFree_h->s_procQ = semdFree_h->s_semAdd = NULL;
 
     //viene effettuato un ciclo dove vengono inseriti tutti i semafori utilizando una funzion ausiliaria
     for(int i = 1; i < MAXPROC; i++){
@@ -246,6 +247,7 @@ void *insertSem(semd_t *newSem){
             newSem->s_next = scanner->s_next;
             scanner->s_next = newSem;
         }
+       
         
     }
     

@@ -114,7 +114,7 @@ extern void insertProcQ(pcb_t **tp, pcb_t *p){
   al pcb che si trova in testa alla cosa dei processi*/
 extern pcb_t *headProcQ(pcb_t **tp){
 	//si verifica innazitutto se il puntatore alla cosa sta effettivamente puntando alla coda
-	if (*tp == NULL){
+	if (*tp == NULL || *tp == 0){
 		return NULL;
 	}
 	//si usa una variabile intermedia per accedera i campi interni del pcb in fondo alla coda e si utilizza dil cuo campo
@@ -155,14 +155,14 @@ extern pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 	}
 
 	//infine prima di restituire il pcb, ne settiamo tutti i valori a un valore neutro
-	setValues(p);
-
+	//setValues(p);
+	
 	return p;
 }
 
 /*questa funzione ritorna TRUE se il pcb passato per parametro non ha figli, FALSE altrimenti*/
 extern int emptyChild(pcb_t *p){
-	return (p->p_child == NULL);
+	return (p->p_child == NULL || p->p_child == 0);
 }
 
 /*questa funzione si occupa di inserire il pcb puntato da p come ultimo figlio nella lista dei figli del pcb puntato da prnt
@@ -266,9 +266,9 @@ void setValues(pcb_t *pointer){
 	pointer->p_child = NULL;
 	pointer->p_next_sib = NULL;
 	pointer->p_prev_sib = NULL;
-	pointer->p_semAdd = NULL;
-	pointer->p_supportStruct = NULL;
-	pointer->p_time = 0;
+	// pointer->p_semAdd = NULL;
+	// pointer->p_supportStruct = NULL;
+	// pointer->p_time = 0;
 }
 
 /*questa funzione si occupa di inizializzare la coda dei processi la cui coda punta tailAddress, con il solo pcb puntato da p.
@@ -316,7 +316,7 @@ pcb_t* getLastChild(pcb_t *prnt){
 	child = prnt->p_child;
 
 	//usiamo un ciclo while per raggiungere l'ultimo figlio e lo restituiamo
-	while(child->p_next_sib != NULL){
+	while(child->p_next_sib != NULL || child->p_next_sib == 0){
 		child = child->p_next_sib;
 	}
 	return child;

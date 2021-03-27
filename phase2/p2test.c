@@ -116,16 +116,17 @@ void print(char *msg) {
 	char *s = msg;
 	devregtr * base = (devregtr *) (TERM0ADDR);
 	devregtr status;
-
-	SYSCALL(PASSERN, (int)&term_mut, 0, 0);				/* P(term_mut) */
+	SYSCALL(PASSERN, (int)&term_mut, 0, 0);
+				/* P(term_mut) */
 	while (*s != EOS) {
 		*(base + 3) = PRINTCHR | (((devregtr) *s) << BYTELEN);
-		status = SYSCALL(WAITIO, TERMINT, 0, 0);
+		status = SYSCALL(WAITIO, TERMINT, 0, 0);	
 		if ((status & TERMSTATMASK) != RECVD)
 			PANIC();
-		s++;
+		s++;	
 	}
-	SYSCALL(VERHOGEN, (int)&term_mut, 0, 0);				/* V(term_mut) */
+	SYSCALL(VERHOGEN, (int)&term_mut, 0, 0);
+				/* V(term_mut) */
 }
 
 
@@ -135,19 +136,19 @@ void print(char *msg) {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 extern void test() {
-
-	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
-
+	
+	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);	
+						/* V(testsem)   */
 	print("p1 v(testsem)\n");
+	
+	/* set up states of the other processes */
+	
+	/* set up p2's state */
+	STST(&p2state);			/* create a state area             */
 
-	// /* set up states of the other processes */
-
-	// /* set up p2's state */
-	// STST(&p2state);			/* create a state area             */
-
-	// p2state.reg_sp = p2state.reg_sp - QPAGE;			/* stack of p2 should sit above    */
-	// p2state.pc_epc = p2state.reg_t9 = (memaddr)p2;		/* p2 starts executing function p2 */
-	// p2state.status = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	p2state.reg_sp = p2state.reg_sp - QPAGE;			/* stack of p2 should sit above    */
+	p2state.pc_epc = p2state.reg_t9 = (memaddr)p2;		/* p2 starts executing function p2 */
+	p2state.status = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
 
 	// STST(&p3state);
@@ -217,15 +218,15 @@ extern void test() {
 	// gchild4state.reg_sp = gchild3state.reg_sp - QPAGE;
 	// gchild4state.pc_epc = gchild4state.reg_t9 = (memaddr)p8leaf;
 	// gchild4state.status = gchild4state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
-	// /* create process p2 */
-	// SYSCALL(CREATETHREAD, (int)&p2state, (int) NULL , 0);				/* start p2     */
-
-	// print("p2 was started\n");
-
-	// SYSCALL(VERHOGEN, (int)&startp2, 0, 0);								/* V(startp2)   */
-
-	// SYSCALL(PASSERN, (int)&endp2, 0, 0);								/* P(endp2)     */
+	
+	/* create process p2 */
+	SYSCALL(CREATETHREAD, (int)&p2state, (int) NULL , 0);				/* start p2     */
+	
+	print("p2 was started\n");
+	
+	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);								/* V(startp2)   */
+	
+	SYSCALL(PASSERN, (int)&endp2, 0, 0);								/* P(endp2)     */
 
 	// /* make sure we really blocked */
 	// if (p1p2synch == 0)
@@ -279,63 +280,63 @@ extern void test() {
 }
 
 
-// /* p2 -- semaphore and cputime-SYS test process */
-// void p2() {
-// 	int		i;				/* just to waste time  */
-// 	cpu_t	now1,now2;		/* times of day        */
-// 	cpu_t	cpu_t1,cpu_t2;	/* cpu time used       */
+/* p2 -- semaphore and cputime-SYS test process */
+void p2() {
+	int		i;				/* just to waste time  */
+	static cpu_t	now1,now2;		/* times of day        */
+	static cpu_t	cpu_t1,cpu_t2;	/* cpu time used       */
+	
+	SYSCALL(PASSERN, (int)&startp2, 0, 0);				/* P(startp2)   */
+	
+	print("p2 starts\n");
+	
+	/* initialize all semaphores in the s[] array */
+	for (i=0; i<= MAXSEM; i++)
+		s[i] = 0;
 
-// 	SYSCALL(PASSERN, (int)&startp2, 0, 0);				/* P(startp2)   */
+	/* V, then P, all of the semaphores in the s[] array */
+	for (i=0; i<= MAXSEM; i++)  {
+		SYSCALL(VERHOGEN, (int)&s[i], 0, 0);			/* V(S[I]) */
+		SYSCALL(PASSERN, (int)&s[i], 0, 0);			/* P(S[I]) */
+		if (s[i] != 0)
+			print("error: p2 bad v/p pairs\n");
+	}
 
-// 	print("p2 starts\n");
+	print("p2 v's successfully\n");
+	
+	/* test of SYS6 */
 
-// 	/* initialize all semaphores in the s[] array */
-// 	for (i=0; i<= MAXSEM; i++)
-// 		s[i] = 0;
+	STCK(now1);				/* time of day   */
+	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
 
-// 	/* V, then P, all of the semaphores in the s[] array */
-// 	for (i=0; i<= MAXSEM; i++)  {
-// 		SYSCALL(VERHOGEN, (int)&s[i], 0, 0);			/* V(S[I]) */
-// 		SYSCALL(PASSERN, (int)&s[i], 0, 0);			/* P(S[I]) */
-// 		if (s[i] != 0)
-// 			print("error: p2 bad v/p pairs\n");
-// 	}
+	/* delay for several milliseconds */
+	for (i=1; i < LOOPNUM; i++)
+		;
 
-// 	print("p2 v's successfully\n");
+	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
+	STCK(now2);				/* time of day  */
+	trueSTOP();
+	if (((now2 - now1) >= (cpu_t2 - cpu_t1)) &&
+			((cpu_t2 - cpu_t1) >= (MINLOOPTIME / (* ((cpu_t *)TIMESCALEADDR)))))
+		print("p2 is OK\n");
+	else  {
+		if ((now2 - now1) < (cpu_t2 - cpu_t1))
+			print ("error: more cpu time than real time\n");
+		if ((cpu_t2 - cpu_t1) < (MINLOOPTIME / (* ((cpu_t *)TIMESCALEADDR))))
+			print ("error: not enough cpu time went by\n");
+		print("p2 blew it!\n");
+	}
+	trueSTOP();
+	p1p2synch = 1;				/* p1 will check this */
 
-// 	/* test of SYS6 */
+	SYSCALL(VERHOGEN, (int)&endp2, 0, 0);				/* V(endp2)     */
 
-// 	STCK(now1);				/* time of day   */
-// 	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
+	SYSCALL(TERMINATETHREAD, 0, 0, 0);			/* terminate p2 */
 
-// 	/* delay for several milliseconds */
-// 	for (i=1; i < LOOPNUM; i++)
-// 		;
-
-// 	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
-// 	STCK(now2);				/* time of day  */
-
-// 	if (((now2 - now1) >= (cpu_t2 - cpu_t1)) &&
-// 			((cpu_t2 - cpu_t1) >= (MINLOOPTIME / (* ((cpu_t *)TIMESCALEADDR)))))
-// 		print("p2 is OK\n");
-// 	else  {
-// 		if ((now2 - now1) < (cpu_t2 - cpu_t1))
-// 			print ("error: more cpu time than real time\n");
-// 		if ((cpu_t2 - cpu_t1) < (MINLOOPTIME / (* ((cpu_t *)TIMESCALEADDR))))
-// 			print ("error: not enough cpu time went by\n");
-// 		print("p2 blew it!\n");
-// 	}
-
-// 	p1p2synch = 1;				/* p1 will check this */
-
-// 	SYSCALL(VERHOGEN, (int)&endp2, 0, 0);				/* V(endp2)     */
-
-// 	SYSCALL(TERMINATETHREAD, 0, 0, 0);			/* terminate p2 */
-
-// 	/* just did a SYS2, so should not get to this point */
-// 	print("error: p2 didn't terminate\n");
-// 	PANIC();					/* PANIC!           */
-// }
+	/* just did a SYS2, so should not get to this point */
+	print("error: p2 didn't terminate\n");
+	PANIC();					/* PANIC!           */
+}
 
 
 // /* p3 -- clock semaphore test process */
