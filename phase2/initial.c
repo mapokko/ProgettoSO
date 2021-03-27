@@ -31,9 +31,9 @@ void main(){
     passUpCP0->tlb_refill_stackPtr = (memaddr) KERNELSTACK;
     passUpCP0->exception_handler = (memaddr) kernelExcHandler;
     passUpCP0->exception_stackPtr = (memaddr) KERNELSTACK;
-    
     initPcbs();
     initASL();
+    
 
     processCount = 0;
     blockedCount = 0;
@@ -53,6 +53,7 @@ void main(){
     firstPcb->p_s.status = IEPON | TEBITON | IMON;
     RAMTOP(firstPcb->p_s.reg_sp);
     firstPcb->p_s.pc_epc = firstPcb->p_s.reg_t9 = (memaddr) test;
+
     /* tecnicamente bisogna inizializzare tutti i campi alberi, semadd e support di firstPcb qui,
      * ma questo è già fatto da allocPcb, quindi dovrebbe già andare bene.....
     */
@@ -61,3 +62,25 @@ void main(){
     insertProcQ(&readyQ, firstPcb);
     scheduler();
 }
+
+void memcpy(memaddr *src, memaddr *dest, unsigned int bytes){
+    
+    for(int i = 0; i < (bytes/4); i++){
+        *dest = *src;
+        dest++;
+        src++;
+    }
+}
+
+void STOP(){
+    static int a;
+    a = 0;
+    SYSCALL(4, &(a), 0, 0);
+    SYSCALL(3, &(a), 0, 0);
+}
+
+void cione(){
+    while(1){;}
+}
+
+void trueSTOP(){;}

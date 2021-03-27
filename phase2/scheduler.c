@@ -10,15 +10,19 @@ void scheduler(){
 
     static pcb_t *newCurrent;
     newCurrent = removeProcQ(&readyQ);
+    if(readyQ == NULL){
+        currentProcess = NULL;
+    }
 
     if(newCurrent != NULL){
         currentProcess = newCurrent;
-        
-        memaddr *timeScale;
-        timeScale = (memaddr) TIMESCALEADDR;
-        int timeLeft = 5000 - (newCurrent->p_time % 5000);
 
-        setTIMER(*timeScale * timeLeft);
+        
+        // memaddr *timeScale;
+        // timeScale = (memaddr) TIMESCALEADDR;
+        // int timeLeft = TIMESLICE - (newCurrent->p_time % TIMESLICE);
+
+        setTIMER(TIMESLICE);
         LDST(&(newCurrent->p_s));
     }
     else if(processCount == 0){

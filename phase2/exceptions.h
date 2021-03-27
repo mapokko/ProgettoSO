@@ -6,5 +6,9 @@
 void uTLB_RefillHandler ();
 void kernelExcHandler();
 void syscallHandler();
+void initDevSem();
+
+pcb_t *verhogen(int *semAddrV);
+memaddr *getDevReg(int devNumber, int bitMapLine);
 
 #endif
