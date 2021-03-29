@@ -151,25 +151,25 @@ extern void test() {
 	p2state.status = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
 
-	// STST(&p3state);
+	STST(&p3state);
 
-	// p3state.reg_sp = p2state.reg_sp - QPAGE;
-	// p3state.pc_epc = p3state.reg_t9 = (memaddr)p3;
-	// p3state.status = p3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
-
-	// STST(&p4state);
-
-	// p4state.reg_sp = p3state.reg_sp - QPAGE;
-	// p4state.pc_epc = p4state.reg_t9 = (memaddr)p4;
-	// p4state.status = p4state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	p3state.reg_sp = p2state.reg_sp - QPAGE;
+	p3state.pc_epc = p3state.reg_t9 = (memaddr)p3;
+	p3state.status = p3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
 
-	// STST(&p5state);
+	STST(&p4state);
 
-	// p5Stack = p5state.reg_sp = p4state.reg_sp - (2 * QPAGE);	/* because there will 2 p4 running*/
-	// p5state.pc_epc = p5state.reg_t9 = (memaddr)p5;
-	// p5state.status = p5state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	p4state.reg_sp = p3state.reg_sp - QPAGE;
+	p4state.pc_epc = p4state.reg_t9 = (memaddr)p4;
+	p4state.status = p4state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+
+
+	STST(&p5state);
+
+	p5Stack = p5state.reg_sp = p4state.reg_sp - (2 * QPAGE);	/* because there will 2 p4 running*/
+	p5state.pc_epc = p5state.reg_t9 = (memaddr)p5;
+	p5state.status = p5state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
 	// STST(&p6state);
 
@@ -227,35 +227,35 @@ extern void test() {
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);								/* V(startp2)   */
 	
 	SYSCALL(PASSERN, (int)&endp2, 0, 0);								/* P(endp2)     */
+	
+	/* make sure we really blocked */
+	if (p1p2synch == 0)
+		print("error: p1/p2 synchronization bad\n");
 
-	// /* make sure we really blocked */
-	// if (p1p2synch == 0)
-	// 	print("error: p1/p2 synchronization bad\n");
+	SYSCALL(CREATETHREAD, (int)&p3state, (int) NULL, 0);				/* start p3     */
+	
+	print("p3 is started\n");
+	
+	SYSCALL(PASSERN, (int)&endp3, 0, 0);								/* P(endp3)     */
+	trueSTOP();
+	SYSCALL(CREATETHREAD, (int)&p4state, (int) NULL, 0);				/* start p4     */
 
-	// SYSCALL(CREATETHREAD, (int)&p3state, (int) NULL, 0);				/* start p3     */
+	pFiveSupport.sup_exceptContext[GENERALEXCEPT].c_stackPtr = (int) p5Stack;
+	pFiveSupport.sup_exceptContext[GENERALEXCEPT].c_status = ALLOFF | IEPBITON | CAUSEINTMASK | TEBITON;
+	pFiveSupport.sup_exceptContext[GENERALEXCEPT].c_pc =  (memaddr) p5gen;
+	pFiveSupport.sup_exceptContext[PGFAULTEXCEPT].c_stackPtr = p5Stack;
+	pFiveSupport.sup_exceptContext[PGFAULTEXCEPT].c_status = ALLOFF | IEPBITON | CAUSEINTMASK | TEBITON;
+	pFiveSupport.sup_exceptContext[PGFAULTEXCEPT].c_pc =  (memaddr) p5mm;
 
-	// print("p3 is started\n");
+	SYSCALL(CREATETHREAD, (int)&p5state, (int) &(pFiveSupport), 0); 	/* start p5     */
 
-	// SYSCALL(PASSERN, (int)&endp3, 0, 0);								/* P(endp3)     */
+	SYSCALL(CREATETHREAD, (int)&p6state, (int) NULL, 0);				/* start p6		*/
 
-	// SYSCALL(CREATETHREAD, (int)&p4state, (int) NULL, 0);				/* start p4     */
+	SYSCALL(CREATETHREAD, (int)&p7state, (int) NULL, 0);				/* start p7		*/
 
-	// pFiveSupport.sup_exceptContext[GENERALEXCEPT].c_stackPtr = (int) p5Stack;
-	// pFiveSupport.sup_exceptContext[GENERALEXCEPT].c_status = ALLOFF | IEPBITON | CAUSEINTMASK | TEBITON;
-	// pFiveSupport.sup_exceptContext[GENERALEXCEPT].c_pc =  (memaddr) p5gen;
-	// pFiveSupport.sup_exceptContext[PGFAULTEXCEPT].c_stackPtr = p5Stack;
-	// pFiveSupport.sup_exceptContext[PGFAULTEXCEPT].c_status = ALLOFF | IEPBITON | CAUSEINTMASK | TEBITON;
-	// pFiveSupport.sup_exceptContext[PGFAULTEXCEPT].c_pc =  (memaddr) p5mm;
+	SYSCALL(PASSERN, (int)&endp5, 0, 0);								/* P(endp5)		*/
 
-	// SYSCALL(CREATETHREAD, (int)&p5state, (int) &(pFiveSupport), 0); 	/* start p5     */
-
-	// SYSCALL(CREATETHREAD, (int)&p6state, (int) NULL, 0);				/* start p6		*/
-
-	// SYSCALL(CREATETHREAD, (int)&p7state, (int) NULL, 0);				/* start p7		*/
-
-	// SYSCALL(PASSERN, (int)&endp5, 0, 0);								/* P(endp5)		*/
-
-	// print("p1 knows p5 ended\n");
+	print("p1 knows p5 ended\n");
 
 	// SYSCALL(PASSERN, (int)&blkp4, 0, 0);								/* P(blkp4)		*/
 
@@ -315,7 +315,7 @@ void p2() {
 
 	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
 	STCK(now2);				/* time of day  */
-	trueSTOP();
+	
 	if (((now2 - now1) >= (cpu_t2 - cpu_t1)) &&
 			((cpu_t2 - cpu_t1) >= (MINLOOPTIME / (* ((cpu_t *)TIMESCALEADDR)))))
 		print("p2 is OK\n");
@@ -326,11 +326,11 @@ void p2() {
 			print ("error: not enough cpu time went by\n");
 		print("p2 blew it!\n");
 	}
-	trueSTOP();
+	
 	p1p2synch = 1;				/* p1 will check this */
 
 	SYSCALL(VERHOGEN, (int)&endp2, 0, 0);				/* V(endp2)     */
-
+	
 	SYSCALL(TERMINATETHREAD, 0, 0, 0);			/* terminate p2 */
 
 	/* just did a SYS2, so should not get to this point */
@@ -339,239 +339,240 @@ void p2() {
 }
 
 
-// /* p3 -- clock semaphore test process */
-// void p3() {
-// 	cpu_t	time1, time2;
-// 	cpu_t	cpu_t1,cpu_t2;		/* cpu time used       */
-// 	int		i;
+/* p3 -- clock semaphore test process */
+void p3() {
+	cpu_t	time1, time2;
+	cpu_t	cpu_t1,cpu_t2;		/* cpu time used       */
+	int		i;
 
-// 	time1 = 0;
-// 	time2 = 0;
+	time1 = 0;
+	time2 = 0;
+	
+	/* loop until we are delayed at least half of clock V interval */
+	while (time2-time1 < (CLOCKINTERVAL >> 1) )  {
+		STCK(time1);			/* time of day     */
+		SYSCALL(WAITCLOCK, 0, 0, 0);
+		STCK(time2);			/* new time of day */
+	}
 
-// 	/* loop until we are delayed at least half of clock V interval */
-// 	while (time2-time1 < (CLOCKINTERVAL >> 1) )  {
-// 		STCK(time1);			/* time of day     */
-// 		SYSCALL(WAITCLOCK, 0, 0, 0);
-// 		STCK(time2);			/* new time of day */
-// 	}
+	print("p3 - WAITCLOCK OK\n");
+	
+	/* now let's check to see if we're really charge for CPU
+	   time correctly */
+	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);
+	
+	for (i=0; i<CLOCKLOOP; i++)
+		SYSCALL(WAITCLOCK, 0, 0, 0);
 
-// 	print("p3 - WAITCLOCK OK\n");
-
-// 	/* now let's check to see if we're really charge for CPU
-// 	   time correctly */
-// 	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);
-
-// 	for (i=0; i<CLOCKLOOP; i++)
-// 		SYSCALL(WAITCLOCK, 0, 0, 0);
-
-// 	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);
-
-// 	if (cpu_t2 - cpu_t1 < (MINCLOCKLOOP / (* ((cpu_t *) TIMESCALEADDR))))
-// 		print("error: p3 - CPU time incorrectly maintained\n");
-// 	else
-// 		print("p3 - CPU time correctly maintained\n");
-
-
-// 	SYSCALL(VERHOGEN, (int)&endp3, 0, 0);				/* V(endp3)        */
-
-// 	SYSCALL(TERMINATETHREAD, 0, 0, 0);			/* terminate p3    */
-
-// 	/* just did a SYS2, so should not get to this point */
-// 	print("error: p3 didn't terminate\n");
-// 	PANIC();					/* PANIC            */
-// }
+	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);
+	
+	if (cpu_t2 - cpu_t1 < (MINCLOCKLOOP / (* ((cpu_t *) TIMESCALEADDR))))
+		print("error: p3 - CPU time incorrectly maintained\n");
+	else
+		print("p3 - CPU time correctly maintained\n");
 
 
-// /* p4 -- termination test process */
-// void p4() {
-// 	switch (p4inc) {
-// 		case 1:
-// 			print("first incarnation of p4 starts\n");
-// 			p4inc++;
-// 			break;
-// 		case 2:
-// 			print("second incarnation of p4 starts\n");
-// 			break;
-// 	}
+	SYSCALL(VERHOGEN, (int)&endp3, 0, 0);				/* V(endp3)        */
+	
+	SYSCALL(TERMINATETHREAD, 0, 0, 0);			/* terminate p3    */
 
-// 	SYSCALL(VERHOGEN, (int)&synp4, 0, 0);				/* V(synp4)     */
-
-// 	SYSCALL(PASSERN, (int)&blkp4, 0, 0);				/* P(blkp4)     */
-
-// 	SYSCALL(PASSERN, (int)&synp4, 0, 0);				/* P(synp4)     */
-
-// 	/* start another incarnation of p4 running, and wait for  */
-// 	/* a V(synp4). the new process will block at the P(blkp4),*/
-// 	/* and eventually, the parent p4 will terminate, killing  */
-// 	/* off both p4's.                                         */
-
-// 	p4state.reg_sp -= QPAGE;		/* give another page  */
-
-// 	SYSCALL(CREATETHREAD, (int)&p4state, 0, 0);			/* start a new p4    */
-
-// 	SYSCALL(PASSERN, (int)&synp4, 0, 0);				/* wait for it       */
-
-// 	print("p4 is OK\n");
-
-// 	SYSCALL(VERHOGEN, (int)&endp4, 0, 0);				/* V(endp4)          */
-
-// 	SYSCALL(TERMINATETHREAD, 0, 0, 0);			/* terminate p4      */
-
-// 	/* just did a SYS2, so should not get to this point */
-// 	print("error: p4 didn't terminate\n");
-// 	PANIC();					/* PANIC            */
-// }
+	/* just did a SYS2, so should not get to this point */
+	print("error: p3 didn't terminate\n");
+	PANIC();					/* PANIC            */
+}
 
 
+/* p4 -- termination test process */
+void p4() {
+	switch (p4inc) {
+		case 1:
+			print("first incarnation of p4 starts\n");
+			p4inc++;
+			break;
+		case 2:
+			print("second incarnation of p4 starts\n");
+			break;
+	}
 
-// /* p5's program trap handler */
-// void p5gen() {
-// 	unsigned int exeCode = pFiveSupport.sup_exceptState[GENERALEXCEPT].cause;
-// 	exeCode = (exeCode & CAUSEMASK) >> 2;
-// 	switch (exeCode) {
-// 	case BUSERROR:
-// 		print("Bus Error: Access non-existent memory\n");
-// 		pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = (memaddr)p5a;   /* Continue with p5a() */
-// 		pFiveSupport.sup_exceptState[GENERALEXCEPT].reg_t9 = (memaddr)p5a;   /* Continue with p5a() */
-// 		break;
+	SYSCALL(VERHOGEN, (int)&synp4, 0, 0);				/* V(synp4)     */
 
-// 	case RESVINSTR:
-// 		print("privileged instruction\n");
-// 		/* return in kernel mode */
-// 		pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = (memaddr)p5b;   /* Continue with p5b() */
-// 		pFiveSupport.sup_exceptState[GENERALEXCEPT].reg_t9 = (memaddr)p5b;   /* Continue with p5b() */
-// 		pFiveSupport.sup_exceptState[GENERALEXCEPT].status = pFiveSupport.sup_exceptState[GENERALEXCEPT].status & KUPBITOFF;
-// 		break;
+	SYSCALL(PASSERN, (int)&blkp4, 0, 0);				/* P(blkp4)     */
 
-// 	case ADDRERROR:
-// 		print("Address Error: non-kuseg access w/KU=1\n");
-// 		/* return in kernel mode */
-// 		pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = (memaddr)p5b;   /* Continue with p5b() */
-// 		pFiveSupport.sup_exceptState[GENERALEXCEPT].reg_t9 = (memaddr)p5b;   /* Continue with p5b() */
-// 		pFiveSupport.sup_exceptState[GENERALEXCEPT].status = pFiveSupport.sup_exceptState[GENERALEXCEPT].status & KUPBITOFF;
-// 		break;
+	SYSCALL(PASSERN, (int)&synp4, 0, 0);				/* P(synp4)     */
 
-// 	case SYSCALLEXCPT:
-// 		p5sys();
-// 		break;
+	/* start another incarnation of p4 running, and wait for  */
+	/* a V(synp4). the new process will block at the P(blkp4),*/
+	/* and eventually, the parent p4 will terminate, killing  */
+	/* off both p4's.                                         */
 
-// 	default:
-// 		print("other program trap\n");
-// 	}
+	p4state.reg_sp -= QPAGE;		/* give another page  */
 
-// 	LDST(&(pFiveSupport.sup_exceptState[GENERALEXCEPT]));
-// }
+	SYSCALL(CREATETHREAD, (int)&p4state, 0, 0);			/* start a new p4    */
 
-// /* p5's memory management trap handler */
-// void p5mm() {
-// 	print("memory management trap\n");
+	SYSCALL(PASSERN, (int)&synp4, 0, 0);				/* wait for it       */
 
-// 	support_t* pFiveSupAddr = (support_t *)SYSCALL(GETSPTPTR, 0, 0, 0);
-// 	if ((pFiveSupAddr) != &(pFiveSupport)) {
-// 		print("Support Structure Address Error\n");
-// 	} else{
-// 		print("Correct Support Structure Address\n");
-// 	}
+	print("p4 is OK\n");
 
-// 	pFiveSupport.sup_exceptState[PGFAULTEXCEPT].status = pFiveSupport.sup_exceptState[PGFAULTEXCEPT].status | KUPBITON;	/* user mode on 	*/
-// 	pFiveSupport.sup_exceptState[PGFAULTEXCEPT].pc_epc = (memaddr)p5b;   						/* return to p5b()	*/
-// 	pFiveSupport.sup_exceptState[PGFAULTEXCEPT].reg_t9 = (memaddr)p5b;						/* return to p5b()	*/
+	SYSCALL(VERHOGEN, (int)&endp4, 0, 0);				/* V(endp4)          */
 
-// 	LDST(&(pFiveSupport.sup_exceptState[PGFAULTEXCEPT]));
-// }
+	SYSCALL(TERMINATETHREAD, 0, 0, 0);			/* terminate p4      */
 
-// /* p5's SYS trap handler */
-// void p5sys() {
-// 	unsigned int p5status = pFiveSupport.sup_exceptState[GENERALEXCEPT].status;
-// 	p5status = (p5status << 28) >> 31;
-// 	switch(p5status) {
-// 	case ON:
-// 		print("High level SYS call from user mode process\n");
-// 		break;
-
-// 	case OFF:
-// 		print("High level SYS call from kernel mode process\n");
-// 		break;
-// 	}
-// 	pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc + 4;   /*	 to avoid SYS looping */
-// 	LDST(&(pFiveSupport.sup_exceptState[GENERALEXCEPT]));
-// }
-
-// /* p5 -- SYS5 test process */
-// void p5() {
-// 	print("p5 starts\n");
-
-// 	/* cause a pgm trap access some non-existent memory */
-// 	*p5MemLocation = *p5MemLocation + 1;		 /* Should cause a program trap */
-// }
-
-// void p5a() {
-// 	/* generage a TLB exception after a TLB-Refill event */
-
-// 	p5MemLocation = (memaddr *) 0x80000000;
-// 	*p5MemLocation = 42;
-// }
-
-// /* second part of p5 - should be entered in user mode first time through */
-// /* should generate a program trap (Address error) */
-// void p5b() {
-// 	cpu_t		time1, time2;
-
-// 	SYSCALL(9, 0, 0, 0);
-// 	SYSCALL(PASSERN, (int)&endp4, 0, 0);			/* P(endp4)*/
-
-// 	/* do some delay to be reasonably sure p4 and its offspring are dead */
-// 	time1 = 0;
-// 	time2 = 0;
-// 	while (time2 - time1 < (CLOCKINTERVAL >> 1))  {
-// 		STCK(time1);
-// 		SYSCALL(WAITCLOCK, 0, 0, 0);
-// 		STCK(time2);
-// 	}
-
-// 	/* if p4 and offspring are really dead, this will increment blkp4 */
-
-// 	SYSCALL(VERHOGEN, (int)&blkp4, 0, 0);			/* V(blkp4) */
-
-// 	SYSCALL(VERHOGEN, (int)&endp5, 0, 0);			/* V(endp5) */
-
-// 	/* should cause a termination       */
-// 	/* since this has already been      */
-// 	/* done for PROGTRAPs               */
-
-// 	/*
-// 	SYSCALL(SPECTRAPVEC, PROGTRAP, (int)&pstat_o, (int)&pstat_n);
-// 	*/
-
-// 	SYSCALL(TERMINATETHREAD, 0, 0, 0);
-
-// 	/* should have terminated, so should not get to this point */
-// 	print("error: p5 didn't terminate\n");
-// 	PANIC();				/* PANIC            */
-// }
+	/* just did a SYS2, so should not get to this point */
+	print("error: p4 didn't terminate\n");
+	PANIC();					/* PANIC            */
+}
 
 
-// /*p6 -- high level syscall without initializing passup vector */
-// void p6() {
-// 	print("p6 starts\n");
 
-// 	SYSCALL(9, 0, 0, 0);		/* should cause termination because p6 has no
-// 			  trap vector */
+/* p5's program trap handler */
+void p5gen() {
+	unsigned int exeCode = pFiveSupport.sup_exceptState[GENERALEXCEPT].cause;
+	exeCode = (exeCode & CAUSEMASK) >> 2;
+	switch (exeCode) {
+	case BUSERROR:
+		print("Bus Error: Access non-existent memory\n");
+		pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = (memaddr)p5a;   /* Continue with p5a() */
+		pFiveSupport.sup_exceptState[GENERALEXCEPT].reg_t9 = (memaddr)p5a;   /* Continue with p5a() */
+		break;
 
-// 	print("error: p6 alive after SYS9() with no trap vector\n");
+	case RESVINSTR:
+		print("privileged instruction\n");
+		/* return in kernel mode */
+		pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = (memaddr)p5b;   /* Continue with p5b() */
+		pFiveSupport.sup_exceptState[GENERALEXCEPT].reg_t9 = (memaddr)p5b;   /* Continue with p5b() */
+		pFiveSupport.sup_exceptState[GENERALEXCEPT].status = pFiveSupport.sup_exceptState[GENERALEXCEPT].status & KUPBITOFF;
+		break;
 
-// 	PANIC();
-// }
+	case ADDRERROR:
+		print("Address Error: non-kuseg access w/KU=1\n");
+		/* return in kernel mode */
+		pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = (memaddr)p5b;   /* Continue with p5b() */
+		pFiveSupport.sup_exceptState[GENERALEXCEPT].reg_t9 = (memaddr)p5b;   /* Continue with p5b() */
+		pFiveSupport.sup_exceptState[GENERALEXCEPT].status = pFiveSupport.sup_exceptState[GENERALEXCEPT].status & KUPBITOFF;
+		break;
 
-// /*p7 -- program trap without initializing passup vector */
-// void p7() {
-// 	print("p7 starts\n");
+	case SYSCALLEXCPT:
+		p5sys();
+		break;
 
-// 	* ((memaddr *) BADADDR) = 0;
+	default:
+		print("other program trap\n");
+	}
 
-// 	print("error: p7 alive after program trap with no trap vector\n");
-// 	PANIC();
-// }
+	LDST(&(pFiveSupport.sup_exceptState[GENERALEXCEPT]));
+}
+
+/* p5's memory management trap handler */
+void p5mm() {
+	print("memory management trap\n");
+
+	support_t* pFiveSupAddr = (support_t *)SYSCALL(GETSPTPTR, 0, 0, 0);
+	if ((pFiveSupAddr) != &(pFiveSupport)) {
+		print("Support Structure Address Error\n");
+	} else{
+		print("Correct Support Structure Address\n");
+	}
+
+	pFiveSupport.sup_exceptState[PGFAULTEXCEPT].status = pFiveSupport.sup_exceptState[PGFAULTEXCEPT].status | KUPBITON;	/* user mode on 	*/
+	pFiveSupport.sup_exceptState[PGFAULTEXCEPT].pc_epc = (memaddr)p5b;   						/* return to p5b()	*/
+	pFiveSupport.sup_exceptState[PGFAULTEXCEPT].reg_t9 = (memaddr)p5b;						/* return to p5b()	*/
+
+	LDST(&(pFiveSupport.sup_exceptState[PGFAULTEXCEPT]));
+}
+
+/* p5's SYS trap handler */
+void p5sys() {
+	unsigned int p5status = pFiveSupport.sup_exceptState[GENERALEXCEPT].status;
+	p5status = (p5status << 28) >> 31;
+	switch(p5status) {
+	case ON:
+		print("High level SYS call from user mode process\n");
+		break;
+
+	case OFF:
+		print("High level SYS call from kernel mode process\n");
+		break;
+	}
+	pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc + 4;   /*	 to avoid SYS looping */
+	LDST(&(pFiveSupport.sup_exceptState[GENERALEXCEPT]));
+}
+
+/* p5 -- SYS5 test process */
+void p5() {
+	
+	print("p5 starts\n");
+
+	/* cause a pgm trap access some non-existent memory */
+	*p5MemLocation = *p5MemLocation + 1;		 /* Should cause a program trap */
+}
+
+void p5a() {
+	/* generage a TLB exception after a TLB-Refill event */
+
+	p5MemLocation = (memaddr *) 0x80000000;
+	*p5MemLocation = 42;
+}
+
+/* second part of p5 - should be entered in user mode first time through */
+/* should generate a program trap (Address error) */
+void p5b() {
+	cpu_t		time1, time2;
+
+	SYSCALL(9, 0, 0, 0);
+	SYSCALL(PASSERN, (int)&endp4, 0, 0);			/* P(endp4)*/
+
+	/* do some delay to be reasonably sure p4 and its offspring are dead */
+	time1 = 0;
+	time2 = 0;
+	while (time2 - time1 < (CLOCKINTERVAL >> 1))  {
+		STCK(time1);
+		SYSCALL(WAITCLOCK, 0, 0, 0);
+		STCK(time2);
+	}
+
+	/* if p4 and offspring are really dead, this will increment blkp4 */
+
+	SYSCALL(VERHOGEN, (int)&blkp4, 0, 0);			/* V(blkp4) */
+
+	SYSCALL(VERHOGEN, (int)&endp5, 0, 0);			/* V(endp5) */
+
+	/* should cause a termination       */
+	/* since this has already been      */
+	/* done for PROGTRAPs               */
+
+	/*
+	SYSCALL(SPECTRAPVEC, PROGTRAP, (int)&pstat_o, (int)&pstat_n);
+	*/
+
+	SYSCALL(TERMINATETHREAD, 0, 0, 0);
+
+	/* should have terminated, so should not get to this point */
+	print("error: p5 didn't terminate\n");
+	PANIC();				/* PANIC            */
+}
+
+
+/*p6 -- high level syscall without initializing passup vector */
+void p6() {
+	print("p6 starts\n");
+
+	SYSCALL(9, 0, 0, 0);		/* should cause termination because p6 has no
+			  trap vector */
+
+	print("error: p6 alive after SYS9() with no trap vector\n");
+
+	PANIC();
+}
+
+/*p7 -- program trap without initializing passup vector */
+void p7() {
+	print("p7 starts\n");
+
+	* ((memaddr *) BADADDR) = 0;
+
+	print("error: p7 alive after program trap with no trap vector\n");
+	PANIC();
+}
 
 
 // /* p8root -- test of termination of subtree of processes              */

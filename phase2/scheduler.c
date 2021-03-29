@@ -6,6 +6,8 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
+
+
 void scheduler(){
 
     static pcb_t *newCurrent;
@@ -16,7 +18,7 @@ void scheduler(){
 
     if(newCurrent != NULL){
         currentProcess = newCurrent;
-
+        STCK(processStartTime);
         
         // memaddr *timeScale;
         // timeScale = (memaddr) TIMESCALEADDR;

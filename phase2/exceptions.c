@@ -10,35 +10,7 @@
 static state_t *currentState = BIOSDATAPAGE;
 static unsigned int interruptStartTime;
 
-// void initDevSem(){
-// 	static int installedLine, scanner = 1;
 
-// 	for(int i = 3; i < 7; i++){
-// 		installedLine = getBitmap(i, INSTALLEDBITMAP);
-		
-// 		for(int j = 0; j < 8; j++){
-// 			if(installedLine & scanner){
-// 				allocASL(&(devSem[i - 3][j]));
-// 			}
-// 			scanner *= 2;
-// 		}
-// 		scanner = 1;
-// 	}
-
-// 	installedLine = getBitmap(7, INSTALLEDBITMAP);
-
-// 	for(int j = 0; j < 8; j++){
-// 		if(installedLine & scanner){
-// 			//semaforo per receive del terminale
-// 			allocASL(&(terSem[0][j]));
-// 			//semaforo per trasmit del terminale
-// 			allocASL(&(terSem[1][j]));
-// 		}
-// 		scanner *= 2;
-// 	}
-
-// 	allocASL(&pseudoClock);
-// }
 
 void uTLB_RefillHandler () {
 
@@ -49,7 +21,7 @@ void uTLB_RefillHandler () {
 }
 
 void kernelExcHandler(){
-	interruptStartTime = getTIMER();
+	STCK(interruptStartTime);
 	
     static unsigned int excCode;
     excCode = (currentState->cause & GETEXECCODE) >> 2;
@@ -112,7 +84,7 @@ void interruptHandler(){
 
 /*gestore della linea di interrupt 1, che identifica cun interrupt dal processor local timer*/
 void PLTHandler(){
-	
+	updateCPUtime();
 	memcpy(currentState, &(currentProcess->p_s), sizeof(state_t));
 	
 	
@@ -123,20 +95,14 @@ void PLTHandler(){
 
 /*linea di interrupt 2, global timer*/
 void timerHandler(){
-	static semd_t *timerSem;
-	timerSem = isInserted(&pseudoClock);
-	static pcb_t *pcbPtr;
-
-	if(timerSem != NULL){
-		while(timerSem->s_procQ != NULL){
-			pcbPtr = removeBlocked(timerSem);
-			insertProcQ(&readyQ, pcbPtr);
-		}
+	
+	while(pseudoClock < 0){
+		verhogen(&pseudoClock);
 	}
 	
-
-	pseudoClock = 0;
+	
 	LDIT(PSECOND);
+	checkCurrent();
 	LDST(currentState);
 	
 }
@@ -160,7 +126,7 @@ void terminalHandler(){
 		if(unblockedPcb != NULL){
 			unblockedPcb->p_s.reg_v0 = status;
 			//unblockedPcb->p_s.pc_epc = unblockedPcb->p_s.reg_t9 = unblockedPcb->p_s.pc_epc + 4;
-			insertProcQ(&readyQ, unblockedPcb);
+			//insertProcQ(&readyQ, unblockedPcb);
 		}
 
 	}
@@ -174,7 +140,7 @@ void terminalHandler(){
 		if(unblockedPcb != NULL){
 			unblockedPcb->p_s.reg_v0 = status;
 			//unblockedPcb->p_s.pc_epc = unblockedPcb->p_s.reg_t9 = unblockedPcb->p_s.pc_epc + 4;
-			insertProcQ(&readyQ, unblockedPcb);
+			//insertProcQ(&readyQ, unblockedPcb);
 		}
 	}
 	
@@ -238,7 +204,8 @@ memaddr *getDevReg(int devNumber, int bitMapLine){
 void syscallHandler(){
 	static unsigned int syscallCode;
 	syscallCode = currentState->reg_a0;
-
+	
+	
 	switch (syscallCode){
 		case CREATEPROCESS: 
 		create_Process(currentState->reg_a1, currentState->reg_a2);
@@ -261,10 +228,10 @@ void syscallHandler(){
 		get_CPU_time();
 		break;
         case CLOCKWAIT: 
-		
+		wait_clock();
 		break;
         case GETSUPPORTPTR: 
-    
+		get_support_data();
 		break;
 		default: 
 		
@@ -273,7 +240,10 @@ void syscallHandler(){
 }
 
 void updateCPUtime(){
-	currentProcess->p_time += (5000 - interruptStartTime);
+	//currentProcess->p_time += (5000 - interruptStartTime);
+	unsigned int tod;
+	STCK(tod);
+	currentProcess->p_time += tod - processStartTime;
 }
 
 void create_Process(state_t *statep, support_t *supportp){
@@ -303,12 +273,16 @@ void create_Process(state_t *statep, support_t *supportp){
 	insertChild(currentProcess, newPcb);
 	insertProcQ(&readyQ, newPcb);
 	currentState->reg_v0 = 0;
+	processCount++;
 	LDST(currentState);
 }
 
 void terminate_Process(){
+	
 	terminate_ProcessRec(currentProcess->p_child);
+	outChild(currentProcess);
 	freePcb(currentProcess);
+	processCount--;
 	scheduler();
 }
 
@@ -317,9 +291,15 @@ void terminate_ProcessRec(pcb_t *child){
 		return;
 	}
 	terminate_ProcessRec(child->p_next_sib);
+	outChild(child);
 	outBlocked(child);
 	outProcQ(&readyQ, child);
+	if(child->p_semAdd != NULL){
+		*(child->p_semAdd)++;
+		blockedCount--;
+	}
 	freePcb(child);
+	processCount--;
 }
 
 void passeren(int* semAddrP){
@@ -342,6 +322,7 @@ pcb_t *verhogen(int *semAddrV){
 	if(*semAddrV <= 0){
 		static pcb_t *unblocked;
 		unblocked = removeBlocked(semAddrV);
+		insertProcQ(&readyQ, unblocked);
 		blockedCount--;
 		return unblocked;
 	}
@@ -352,16 +333,15 @@ void verhogenWrapper(int *semAddrV){
 	static pcb_t *vPcb;
 	vPcb = verhogen(semAddrV);
 	currentState->pc_epc += 4;
-	if(vPcb != NULL){
-		insertProcQ(&readyQ, vPcb);
-	}
+	// if(vPcb != NULL){
+	// 	insertProcQ(&readyQ, vPcb);
+	// }
 	
 	LDST(currentState);
 }
 
 void wait_for_IO_Device(int devNumber, int devLine, int termReadFlag){
 	
-
 	if(devNumber != 7){
 		passeren(&(devSem[devNumber - 3][devLine]));
 	}
@@ -374,8 +354,24 @@ void wait_for_IO_Device(int devNumber, int devLine, int termReadFlag){
 }
 
 void get_CPU_time(){
-	updateCPUtime();
+	
 	currentState->reg_v0 = currentProcess->p_time;
 	currentState->pc_epc += 4;
 	LDST(currentState);
+}
+
+void wait_clock(){
+	passeren(&pseudoClock);
+}
+
+void get_support_data(){
+	currentState->reg_v0 = currentProcess->p_supportStruct;
+	currentState->pc_epc += 4;
+	memcpy(currentState, &(currentProcess->p_s), sizeof(state_t));
+	LDST(currentState);
+}
+
+void passUp_orDie(){
+
+
 }

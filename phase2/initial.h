@@ -12,6 +12,7 @@ unsigned int blockedCount;
 int devSem[4][8];
 int terSem[2][8];
 int pseudoClock;
+unsigned int processStartTime;
 
 void memcpy(memaddr *src, memaddr *dest, unsigned int words);
 void STOP();
