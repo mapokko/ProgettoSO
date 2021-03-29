@@ -30,16 +30,16 @@ void kernelExcHandler(){
 		interruptHandler();
 		break;
 		case 1 ... 3: 
-		
+		passUp_orDie(PGFAULTEXCEPT);
 		break;
 		case 4 ... 7: 
-		
+		passUp_orDie(GENERALEXCEPT);
 		break;
         case 8: 
         syscallHandler();
 		break;
         case 9 ... 12: 
-    
+		passUp_orDie(GENERALEXCEPT);
 		break;
 		default: 
 		
@@ -234,7 +234,7 @@ void syscallHandler(){
 		get_support_data();
 		break;
 		default: 
-		
+		passUp_orDie(GENERALEXCEPT);
 		break;
 	}
 }
@@ -274,6 +274,7 @@ void create_Process(state_t *statep, support_t *supportp){
 	insertProcQ(&readyQ, newPcb);
 	currentState->reg_v0 = 0;
 	processCount++;
+	checkCurrent();
 	LDST(currentState);
 }
 
@@ -291,11 +292,12 @@ void terminate_ProcessRec(pcb_t *child){
 		return;
 	}
 	terminate_ProcessRec(child->p_next_sib);
+	terminate_ProcessRec(child->p_child);
 	outChild(child);
 	outBlocked(child);
 	outProcQ(&readyQ, child);
 	if(child->p_semAdd != NULL){
-		*(child->p_semAdd)++;
+		*(child->p_semAdd) = *(child->p_semAdd) + 1;
 		blockedCount--;
 	}
 	freePcb(child);
@@ -322,9 +324,12 @@ pcb_t *verhogen(int *semAddrV){
 	if(*semAddrV <= 0){
 		static pcb_t *unblocked;
 		unblocked = removeBlocked(semAddrV);
-		insertProcQ(&readyQ, unblocked);
-		blockedCount--;
-		return unblocked;
+		if(unblocked != NULL){
+			insertProcQ(&readyQ, unblocked);
+			blockedCount--;
+			return unblocked;
+		}
+		
 	}
 	return NULL;
 }
@@ -371,7 +376,12 @@ void get_support_data(){
 	LDST(currentState);
 }
 
-void passUp_orDie(){
+void passUp_orDie(int contextNumber){
+	if(currentProcess->p_supportStruct == NULL){
+		terminate_Process();
+	}
 
+	memcpy(currentState, &(currentProcess->p_supportStruct->sup_exceptState[contextNumber]), sizeof(state_t));
+	LDCXT(currentProcess->p_supportStruct->sup_exceptContext[contextNumber].c_stackPtr, currentProcess->p_supportStruct->sup_exceptContext[contextNumber].c_status, currentProcess->p_supportStruct->sup_exceptContext[contextNumber].c_pc);
 
 }

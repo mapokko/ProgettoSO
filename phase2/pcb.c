@@ -68,6 +68,7 @@ extern pcb_t *allocPcb(){
 
 	//vengono impostato i valori del pcb da restituire
 	//setValues(toReturn);
+
 	return toReturn;
 }
 
@@ -156,7 +157,7 @@ extern pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 
 	//infine prima di restituire il pcb, ne settiamo tutti i valori a un valore neutro
 	//setValues(p);
-	
+	p->p_next = p->p_prev = 0;
 	return p;
 }
 

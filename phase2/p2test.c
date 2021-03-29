@@ -171,53 +171,53 @@ extern void test() {
 	p5state.pc_epc = p5state.reg_t9 = (memaddr)p5;
 	p5state.status = p5state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-	// STST(&p6state);
+	STST(&p6state);
 
-	// p6state.reg_sp = p5state.reg_sp - (2 * QPAGE);
-	// p6state.pc_epc = p6state.reg_t9 = (memaddr)p6;
-	// p6state.status = p6state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	p6state.reg_sp = p5state.reg_sp - (2 * QPAGE);
+	p6state.pc_epc = p6state.reg_t9 = (memaddr)p6;
+	p6state.status = p6state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
 
-	// STST(&p7state);
+	STST(&p7state);
 
-	// p7state.reg_sp = p6state.reg_sp - QPAGE;
-	// p7state.pc_epc = p7state.reg_t9 = (memaddr)p7;
-	// p7state.status = p7state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	p7state.reg_sp = p6state.reg_sp - QPAGE;
+	p7state.pc_epc = p7state.reg_t9 = (memaddr)p7;
+	p7state.status = p7state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-	// STST(&p8rootstate);
-	// p8rootstate.reg_sp = p7state.reg_sp - QPAGE;
-	// p8rootstate.pc_epc = p8rootstate.reg_t9 = (memaddr)p8root;
-	// p8rootstate.status = p8rootstate.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	STST(&p8rootstate);
+	p8rootstate.reg_sp = p7state.reg_sp - QPAGE;
+	p8rootstate.pc_epc = p8rootstate.reg_t9 = (memaddr)p8root;
+	p8rootstate.status = p8rootstate.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-	// STST(&child1state);
-	// child1state.reg_sp = p8rootstate.reg_sp - QPAGE;
-	// child1state.pc_epc = child1state.reg_t9 = (memaddr)child1;
-	// child1state.status = child1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	STST(&child1state);
+	child1state.reg_sp = p8rootstate.reg_sp - QPAGE;
+	child1state.pc_epc = child1state.reg_t9 = (memaddr)child1;
+	child1state.status = child1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-	// STST(&child2state);
-	// child2state.reg_sp = child1state.reg_sp - QPAGE;
-	// child2state.pc_epc = child2state.reg_t9 = (memaddr)child2;
-	// child2state.status = child2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	STST(&child2state);
+	child2state.reg_sp = child1state.reg_sp - QPAGE;
+	child2state.pc_epc = child2state.reg_t9 = (memaddr)child2;
+	child2state.status = child2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-	// STST(&gchild1state);
-	// gchild1state.reg_sp = child2state.reg_sp - QPAGE;
-	// gchild1state.pc_epc = gchild1state.reg_t9 = (memaddr)p8leaf;
-	// gchild1state.status = gchild1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	STST(&gchild1state);
+	gchild1state.reg_sp = child2state.reg_sp - QPAGE;
+	gchild1state.pc_epc = gchild1state.reg_t9 = (memaddr)p8leaf;
+	gchild1state.status = gchild1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-	// STST(&gchild2state);
-	// gchild2state.reg_sp = gchild1state.reg_sp - QPAGE;
-	// gchild2state.pc_epc = gchild2state.reg_t9 = (memaddr)p8leaf;
-	// gchild2state.status = gchild2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	STST(&gchild2state);
+	gchild2state.reg_sp = gchild1state.reg_sp - QPAGE;
+	gchild2state.pc_epc = gchild2state.reg_t9 = (memaddr)p8leaf;
+	gchild2state.status = gchild2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-	// STST(&gchild3state);
-	// gchild3state.reg_sp = gchild2state.reg_sp - QPAGE;
-	// gchild3state.pc_epc = gchild3state.reg_t9 = (memaddr)p8leaf;
-	// gchild3state.status = gchild3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	STST(&gchild3state);
+	gchild3state.reg_sp = gchild2state.reg_sp - QPAGE;
+	gchild3state.pc_epc = gchild3state.reg_t9 = (memaddr)p8leaf;
+	gchild3state.status = gchild3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-	// STST(&gchild4state);
-	// gchild4state.reg_sp = gchild3state.reg_sp - QPAGE;
-	// gchild4state.pc_epc = gchild4state.reg_t9 = (memaddr)p8leaf;
-	// gchild4state.status = gchild4state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+	STST(&gchild4state);
+	gchild4state.reg_sp = gchild3state.reg_sp - QPAGE;
+	gchild4state.pc_epc = gchild4state.reg_t9 = (memaddr)p8leaf;
+	gchild4state.status = gchild4state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 	
 	/* create process p2 */
 	SYSCALL(CREATETHREAD, (int)&p2state, (int) NULL , 0);				/* start p2     */
@@ -237,7 +237,7 @@ extern void test() {
 	print("p3 is started\n");
 	
 	SYSCALL(PASSERN, (int)&endp3, 0, 0);								/* P(endp3)     */
-	trueSTOP();
+	
 	SYSCALL(CREATETHREAD, (int)&p4state, (int) NULL, 0);				/* start p4     */
 
 	pFiveSupport.sup_exceptContext[GENERALEXCEPT].c_stackPtr = (int) p5Stack;
@@ -248,35 +248,35 @@ extern void test() {
 	pFiveSupport.sup_exceptContext[PGFAULTEXCEPT].c_pc =  (memaddr) p5mm;
 
 	SYSCALL(CREATETHREAD, (int)&p5state, (int) &(pFiveSupport), 0); 	/* start p5     */
-
+	
 	SYSCALL(CREATETHREAD, (int)&p6state, (int) NULL, 0);				/* start p6		*/
-
+	
 	SYSCALL(CREATETHREAD, (int)&p7state, (int) NULL, 0);				/* start p7		*/
 
 	SYSCALL(PASSERN, (int)&endp5, 0, 0);								/* P(endp5)		*/
 
 	print("p1 knows p5 ended\n");
 
-	// SYSCALL(PASSERN, (int)&blkp4, 0, 0);								/* P(blkp4)		*/
+	SYSCALL(PASSERN, (int)&blkp4, 0, 0);								/* P(blkp4)		*/
 
-	// /* now for a more rigorous check of process termination */
-	// for (p8inc=0; p8inc<4; p8inc++) {
-	// 	creation = SYSCALL(CREATETHREAD, (int)&p8rootstate, (int) NULL, 0);
+	/* now for a more rigorous check of process termination */
+	for (p8inc=0; p8inc<4; p8inc++) {
+		creation = SYSCALL(CREATETHREAD, (int)&p8rootstate, (int) NULL, 0);
 
-	// 	if (creation == CREATENOGOOD) {
-	// 		print("error in process termination\n");
-	// 		PANIC();
-	// 	}
+		if (creation == CREATENOGOOD) {
+			print("error in process termination\n");
+			PANIC();
+		}
 
-	// 	SYSCALL(PASSERN, (int)&endp8, 0, 0);
-	// }
+		SYSCALL(PASSERN, (int)&endp8, 0, 0);
+	}
+	
+	print("p1 finishes OK -- TTFN\n");
+	* ((memaddr *) BADADDR) = 0;				/* terminate p1 */
 
-	// print("p1 finishes OK -- TTFN\n");
-	// * ((memaddr *) BADADDR) = 0;				/* terminate p1 */
-
-	// /* should not reach this point, since p1 just got a program trap */
-	// print("error: p1 still alive after progtrap & no trap vector\n");
-	// PANIC();					/* PANIC !!!     */
+	/* should not reach this point, since p1 just got a program trap */
+	print("error: p1 still alive after progtrap & no trap vector\n");
+	PANIC();					/* PANIC !!!     */
 }
 
 
@@ -384,6 +384,7 @@ void p3() {
 
 /* p4 -- termination test process */
 void p4() {
+	
 	switch (p4inc) {
 		case 1:
 			print("first incarnation of p4 starts\n");
@@ -476,7 +477,7 @@ void p5mm() {
 	pFiveSupport.sup_exceptState[PGFAULTEXCEPT].status = pFiveSupport.sup_exceptState[PGFAULTEXCEPT].status | KUPBITON;	/* user mode on 	*/
 	pFiveSupport.sup_exceptState[PGFAULTEXCEPT].pc_epc = (memaddr)p5b;   						/* return to p5b()	*/
 	pFiveSupport.sup_exceptState[PGFAULTEXCEPT].reg_t9 = (memaddr)p5b;						/* return to p5b()	*/
-
+	
 	LDST(&(pFiveSupport.sup_exceptState[PGFAULTEXCEPT]));
 }
 
@@ -501,7 +502,7 @@ void p5sys() {
 void p5() {
 	
 	print("p5 starts\n");
-
+	
 	/* cause a pgm trap access some non-existent memory */
 	*p5MemLocation = *p5MemLocation + 1;		 /* Should cause a program trap */
 }
@@ -531,7 +532,7 @@ void p5b() {
 	}
 
 	/* if p4 and offspring are really dead, this will increment blkp4 */
-
+	
 	SYSCALL(VERHOGEN, (int)&blkp4, 0, 0);			/* V(blkp4) */
 
 	SYSCALL(VERHOGEN, (int)&endp5, 0, 0);			/* V(endp5) */
@@ -575,56 +576,56 @@ void p7() {
 }
 
 
-// /* p8root -- test of termination of subtree of processes              */
-// /* create a subtree of processes, wait for the leaves to block, signal*/
-// /* the root process, and then terminate                               */
-// void p8root() {
-// 	int		grandchild;
+/* p8root -- test of termination of subtree of processes              */
+/* create a subtree of processes, wait for the leaves to block, signal*/
+/* the root process, and then terminate                               */
+void p8root() {
+	int		grandchild;
 
-// 	print("p8root starts\n");
+	print("p8root starts\n");
 
-// 	SYSCALL(CREATETHREAD, (int)&child1state, (int) NULL, 0);
+	SYSCALL(CREATETHREAD, (int)&child1state, (int) NULL, 0);
 
-// 	SYSCALL(CREATETHREAD, (int)&child2state, (int) NULL, 0);
+	SYSCALL(CREATETHREAD, (int)&child2state, (int) NULL, 0);
 
-// 	for (grandchild=0; grandchild < NOLEAVES; grandchild++) {
-// 		SYSCALL(PASSERN, (int)&endcreate, 0, 0);
-// 	}
+	for (grandchild=0; grandchild < NOLEAVES; grandchild++) {
+		SYSCALL(PASSERN, (int)&endcreate, 0, 0);
+	}
 
-// 	SYSCALL(VERHOGEN, (int)&endp8, 0, 0);
+	SYSCALL(VERHOGEN, (int)&endp8, 0, 0);
+	
+	SYSCALL(TERMINATETHREAD, 0, 0, 0);
+}
 
-// 	SYSCALL(TERMINATETHREAD, 0, 0, 0);
-// }
+/*child1 & child2 -- create two sub-processes each*/
 
-// /*child1 & child2 -- create two sub-processes each*/
+void child1() {
+	print("child1 starts\n");
 
-// void child1() {
-// 	print("child1 starts\n");
+	SYSCALL(CREATETHREAD, (int)&gchild1state, (int) NULL, 0);
 
-// 	SYSCALL(CREATETHREAD, (int)&gchild1state, (int) NULL, 0);
+	SYSCALL(CREATETHREAD, (int)&gchild2state, (int) NULL, 0);
 
-// 	SYSCALL(CREATETHREAD, (int)&gchild2state, (int) NULL, 0);
+	SYSCALL(PASSERN, (int)&blkp8, 0, 0);
+}
 
-// 	SYSCALL(PASSERN, (int)&blkp8, 0, 0);
-// }
+void child2() {
+	print("child2 starts\n");
 
-// void child2() {
-// 	print("child2 starts\n");
+	SYSCALL(CREATETHREAD, (int)&gchild3state, (int) NULL, 0);
 
-// 	SYSCALL(CREATETHREAD, (int)&gchild3state, (int) NULL, 0);
+	SYSCALL(CREATETHREAD, (int)&gchild4state, (int) NULL, 0);
 
-// 	SYSCALL(CREATETHREAD, (int)&gchild4state, (int) NULL, 0);
+	SYSCALL(PASSERN, (int)&blkp8, 0, 0);
+}
 
-// 	SYSCALL(PASSERN, (int)&blkp8, 0, 0);
-// }
+/*p8leaf -- code for leaf processes*/
 
-// /*p8leaf -- code for leaf processes*/
+void p8leaf() {
+	print("leaf process starts\n");
 
-// void p8leaf() {
-// 	print("leaf process starts\n");
+	SYSCALL(VERHOGEN, (int)&endcreate, 0, 0);
 
-// 	SYSCALL(VERHOGEN, (int)&endcreate, 0, 0);
-
-// 	SYSCALL(PASSERN, (int)&blkp8, 0, 0);
-// }
+	SYSCALL(PASSERN, (int)&blkp8, 0, 0);
+}
 
