@@ -67,7 +67,8 @@ extern pcb_t *allocPcb(){
 	pcbFree_h = pcbFree_h->p_next;
 
 	//vengono impostato i valori del pcb da restituire
-	setValues(toReturn);
+	//setValues(toReturn);
+
 	return toReturn;
 }
 
@@ -156,7 +157,7 @@ extern pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 
 	//infine prima di restituire il pcb, ne settiamo tutti i valori a un valore neutro
 	//setValues(p);
-	
+	p->p_next = p->p_prev = 0;
 	return p;
 }
 
@@ -229,7 +230,7 @@ extern pcb_t *outChild(pcb_t *p){
 	}
 
 	//settiamo a valori di p a valori neutri e lo restituiamo
-	setValues(p);
+	//setValues(p);
 	return p;
 }
 
@@ -266,9 +267,9 @@ void setValues(pcb_t *pointer){
 	pointer->p_child = NULL;
 	pointer->p_next_sib = NULL;
 	pointer->p_prev_sib = NULL;
-	// pointer->p_semAdd = NULL;
-	// pointer->p_supportStruct = NULL;
-	// pointer->p_time = 0;
+	pointer->p_semAdd = NULL;
+	pointer->p_supportStruct = NULL;
+	pointer->p_time = 0;
 }
 
 /*questa funzione si occupa di inizializzare la coda dei processi la cui coda punta tailAddress, con il solo pcb puntato da p.

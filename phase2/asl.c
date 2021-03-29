@@ -95,7 +95,7 @@ extern pcb_t* outBlocked(pcb_t *p){
     //usiamo una variabile ausiliaria per verificare che il semaforo associato a p sia presente nella lista dei semafori attivi
     //e che il pcb passato sia effettivamente associato ad una coda di pcb di un semaforo attivo
     semd_t *semPtr;
-    if((semPtr = isInserted(p->p_semAdd)) == NULL || p->p_semAdd == 0){
+    if((semPtr = isInserted(p->p_semAdd)) == NULL || p->p_semAdd == 0 || p->p_semAdd == NULL){
         return NULL;
     }
 

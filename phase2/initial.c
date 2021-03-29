@@ -14,13 +14,12 @@ unsigned int blockedCount;
 int devSem[4][8];
 int terSem[2][8];
 int pseudoClock;
-
+unsigned int processStartTime;
 
 
 void setIntervalTimer(){
-    // memaddr *timeScale;
-    // timeScale = (memaddr) TIMESCALEADDR;
-    LDIT(100000);
+    
+    LDIT(PSECOND);
 }
 
 
@@ -70,13 +69,6 @@ void memcpy(memaddr *src, memaddr *dest, unsigned int bytes){
         dest++;
         src++;
     }
-}
-
-void STOP(){
-    static int a;
-    a = 0;
-    SYSCALL(4, &(a), 0, 0);
-    SYSCALL(3, &(a), 0, 0);
 }
 
 void cione(){
