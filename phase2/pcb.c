@@ -2,7 +2,7 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
-
+//prova
 
 
 /*processo è il valore usato per indicare la dimensione occupata da un pcb, ovvero la dimensione di una singola cella
@@ -37,7 +37,7 @@ extern void initPcbs(){
 
 /*questa fuzione prende il pcb puntato da p e lo inserisce alla testa della lista dei pcb liberi, aggiornando poi pcbFree_h*/
 extern void freePcb(pcb_t *p){
-	//viene prima di tutto verificato se la lista dei pcb è completamente vuota, in tal caso si riutilizza la funzione per 
+	//viene prima di tutto verificato se la lista dei pcb è completamente vuota, in tal caso si riutilizza la funzione per
 	//inizializzare la testa
 	if (pcbFree_h == NULL){
 		initHead(p);
@@ -62,7 +62,7 @@ extern pcb_t *allocPcb(){
 	//viene utilizata la variabile toReturn per mantere un puntatore al pcb che deve essere restituito
 	pcb_t *toReturn;
 	toReturn = pcbFree_h;
-	
+
 	//viene aggiornato il puntatore alla testa della lista dei pcb liberi
 	pcbFree_h = pcbFree_h->p_next;
 
@@ -99,7 +99,7 @@ extern void insertProcQ(pcb_t **tp, pcb_t *p){
 
 	//viene usata una variabile ausiliaria per manipoalare i campi del pcb puntato dal puntatore alla coda,
 	//che è a sua volta puntato da tp. Per questo motivo a tail si assegna *tp e non tp e basta
-	pcb_t *tail; 
+	pcb_t *tail;
 	tail = *tp;
 
 	//queste tre invocazioni impostano i campi p_next e p_prev rispettivamente di: il nuovo pcb puntato da p, il pcb
@@ -188,7 +188,7 @@ extern void insertChild(pcb_t *prnt, pcb_t *p){
 
 	//si corregge il campo parent di p in modo che punti a prnt
 	p->p_prnt = prnt;
-	
+
 }
 
 /*questa funzione rimuove il primo figlio della lista dei figli del pcb puntato da p*/
@@ -284,7 +284,7 @@ int isPresent(pcb_t *tail, pcb_t *p){
 	//si usa una variabile ausiliaria per confrontare ogni elemento della lista
 	pcb_t *scanner;
 	scanner = tail;
-	
+
 	//si confronta p con scanner finché scanner non ritorna a puntare su tail. Osserviamo che se la coda puntata da tail contiene
 	//un solo elemento, il ciclo do while viene eseguito almeno una sola volta, nel caso quel pcb fosse quello ricercato
 	do{
@@ -321,4 +321,3 @@ pcb_t* getLastChild(pcb_t *prnt){
 	}
 	return child;
 }
-
