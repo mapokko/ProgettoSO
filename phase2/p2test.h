@@ -5,5 +5,6 @@
 #define P2TEST_H_INCLUDED
 
 extern void test();
+void uTLB_RefillHandler ();
 
 #endif
