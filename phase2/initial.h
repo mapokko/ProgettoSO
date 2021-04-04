@@ -13,10 +13,9 @@ int devSem[4][8];
 int terSem[2][8];
 int pseudoClock;
 unsigned int processStartTime;
+devregarea_t *bus_devReg_Area;
 
-void memcpy(memaddr *src, memaddr *dest, unsigned int words);
-void STOP();
-void cione();
+
 void trueSTOP();
 
 #endif

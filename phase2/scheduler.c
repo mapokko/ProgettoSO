@@ -9,23 +9,13 @@
 
 
 void scheduler(){
+    currentProcess = removeProcQ(&readyQ);
 
-    static pcb_t *newCurrent;
-    newCurrent = removeProcQ(&readyQ);
-    if(readyQ == NULL){
-        currentProcess = NULL;
-    }
-
-    if(newCurrent != NULL){
-        currentProcess = newCurrent;
+    if(currentProcess != NULL){
         STCK(processStartTime);
-        
-        // memaddr *timeScale;
-        // timeScale = (memaddr) TIMESCALEADDR;
-        // int timeLeft = TIMESLICE - (newCurrent->p_time % TIMESLICE);
-
+    
         setTIMER(TIMESLICE);
-        LDST(&(newCurrent->p_s));
+        LDST(&(currentProcess->p_s));
     }
     else if(processCount == 0){
         HALT();

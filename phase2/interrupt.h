@@ -4,6 +4,6 @@
 #ifndef INTERRUPT_H_INCLUDED
 #define INTERRUPT_H_INCLUDED
 
-
+void interruptHandler();
 
 #endif

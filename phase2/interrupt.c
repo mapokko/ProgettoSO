@@ -6,6 +6,8 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
+memaddr *getDevReg(int devNumber, int interruptingDeviceNumber);
+
 /*viene gestito l'effettivo linea di interrupt, che non potrà mia essere 0 perché non compoete al progetto*/
 void interruptHandler(){
 	static unsigned int interruptCode;
@@ -20,16 +22,16 @@ void interruptHandler(){
 		return;
 	}
 	else if(interruptCode & DISKINTERRUPT){
-
+        IODeviceHandler(DISKINT);
 	}
 	else if(interruptCode & FLASHINTERRUPT){
-
+        IODeviceHandler(FLASHINT);
 	}
 	else if(interruptCode & (FLASHINTERRUPT << 1)){ /*dovrebbe essere l'interrupt del Network Device*/
-
+        IODeviceHandler(NETWINT);
 	}
 	else if(interruptCode & PRINTINTERRUPT){
-
+        IODeviceHandler(PRNTINT);
 	}
 	else if(interruptCode & TERMINTERRUPT){
 		terminalHandler();
@@ -41,7 +43,6 @@ void interruptHandler(){
 void PLTHandler(){
 	updateCPUtime();
 	memcpy(currentState, &(currentProcess->p_s), sizeof(state_t));
-	
 	
 	insertProcQ(&readyQ, currentProcess);
 	setTIMER(100000);
@@ -55,54 +56,65 @@ void timerHandler(){
 		verhogen(&pseudoClock);
 	}
 	
-	
 	LDIT(PSECOND);
 	checkCurrent();
 	LDST(currentState);
 	
 }
 
+void IODeviceHandler(int devNumber){
+    static unsigned int interruptingDeviceNum, status;
+    static dtpreg_t *deviceRegister;
+    static pcb_t *unblocked;
+     
+    interruptingDeviceNum = getLine(getBitmap(devNumber));
+	deviceRegister = getDevReg(devNumber, interruptingDeviceNum);
+
+    status = deviceRegister->status;
+    
+    unblocked = verhogen(&(devSem[devNumber - 3][interruptingDeviceNum]));
+    if(unblocked != NULL){
+        unblocked->p_s.reg_v0 = status;
+    }
+  
+    deviceRegister->command = 1;
+
+    checkCurrent();
+    LDST(currentState);
+}
+
 /*linea di interrupt 7, gestore terminale*/
 void terminalHandler(){
-	static memaddr *terminalRegister;
-	static unsigned int bitMapLine, status;
-	static semd_t *semaphore;
+	static unsigned int interruptingDeviceNum, status;
+    static termreg_t *terminalRegister;
 	static pcb_t *unblockedPcb;
 
-	bitMapLine = getLine(getBitmap(TERMINT, INTERRUPTBITMAP));
-	terminalRegister = getDevReg(TERMINT, bitMapLine);
+	interruptingDeviceNum = getLine(getBitmap(TERMINT));
+	terminalRegister = getDevReg(TERMINT, interruptingDeviceNum);
 
-	status = *(terminalRegister + 2);
-	status = (status & 0xff);
+	status = terminalRegister->recv_status;
 
-	if(status == 5){
-		*(terminalRegister + 3) = 1;
-		unblockedPcb = verhogen(&(terSem[1][bitMapLine - 1]));
+    for(int i = 0; i <= 1; i++){
+        if(i == 0){
+            terminalRegister->recv_command = 1;
+        }
+        else{
+            terminalRegister->transm_command = 1;
+        }
+		unblockedPcb = verhogen(&(terSem[i][interruptingDeviceNum]));
 		if(unblockedPcb != NULL){
-			unblockedPcb->p_s.reg_v0 = status;
-			//unblockedPcb->p_s.pc_epc = unblockedPcb->p_s.reg_t9 = unblockedPcb->p_s.pc_epc + 4;
-			//insertProcQ(&readyQ, unblockedPcb);
-		}
-
-	}
-
-	status = *(terminalRegister);
-	status = (status & 0xff);
-
-	if(status == 5){
-		*(terminalRegister + 1) = 1;
-		unblockedPcb = verhogen(&(terSem[0][bitMapLine - 1]));
-		if(unblockedPcb != NULL){
-			unblockedPcb->p_s.reg_v0 = status;
-			//unblockedPcb->p_s.pc_epc = unblockedPcb->p_s.reg_t9 = unblockedPcb->p_s.pc_epc + 4;
-			//insertProcQ(&readyQ, unblockedPcb);
-		}
-	}
+		    unblockedPcb->p_s.reg_v0 = status;
+        }
+	
+        status = terminalRegister->transm_status;
+    }
 	
 	checkCurrent();
 	LDST(currentState);
 
 }
+
+
 
 void checkCurrent(){
 	if(currentProcess == NULL){
@@ -110,30 +122,16 @@ void checkCurrent(){
 	}
 }
 
-
 /*restiusce il bitmap del numero del dispositivo passato, flag serve per dire quale bitmap(interrupt o installed)*/
-int getBitmap(int devNumber, int flag){
-
-	static unsigned int *interrupting;
-
-	if(flag){
-		interrupting = (memaddr) INTERRUPTINGBASEADDRESS;
-	}
-	else{
-		interrupting = (memaddr) INSTALLEDBASEADDRESS;
-	}
-	
-	interrupting += devNumber - 3;
-
-
-	return *interrupting;
+int getBitmap(int devNumber){
+	return bus_devReg_Area->interrupt_dev[devNumber - 3];
 }
 
 /*prende un bitmap, restituisce la prima istanza del primo dispositivo su cui pende interrupt*/
 int getLine(int bitmap){
 	static unsigned int scanner, line;
 	scanner = 1;
-	line = 1;
+	line = 0;
 
 	while(!(bitmap & scanner)){
 		scanner *= 2;
@@ -144,7 +142,6 @@ int getLine(int bitmap){
 }
 
 /*preso un dispositivo e  degli interrupt associato, restituisce l'indirizzo del primo bitmap*/
-memaddr *getDevReg(int devNumber, int bitMapLine){
-	//return DEVICEREGISTERBASE + ((devNumber - 3) * 0x80) + (bitMapLine * 0x10);
-	return DEVICEREGISTERBASE + ((devNumber - 3) * 0x80) + ((bitMapLine - 1) * 0x10);
+memaddr *getDevReg(int devNumber, int interruptingDeviceNumber){
+	return DEVICEREGISTERBASE + ((devNumber - 3) * 0x80) + ((interruptingDeviceNumber) * 0x10);
 }

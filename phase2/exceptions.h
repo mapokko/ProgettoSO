@@ -4,9 +4,7 @@
 #define EXCEPTIONS_H_INCLUDED
 
 void kernelExcHandler();
-
-
-memaddr *getDevReg(int devNumber, int bitMapLine);
+void memcpy(memaddr *src, memaddr *dest, unsigned int words);
 
 state_t *currentState;
 

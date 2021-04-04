@@ -9,7 +9,6 @@
 
 state_t *currentState = BIOSDATAPAGE;
 
-
 void kernelExcHandler(){
 	
     static unsigned int excCode;
@@ -31,10 +30,18 @@ void kernelExcHandler(){
 		passUp_orDie(GENERALEXCEPT);
 		break;
 		default: 
-		
+		passUp_orDie(GENERALEXCEPT);
 		break;
 	}
     
 
 }
 
+void memcpy(memaddr *src, memaddr *dest, unsigned int bytes){
+    
+    for(int i = 0; i < (bytes/4); i++){
+        *dest = *src;
+        dest++;
+        src++;
+    }
+}
