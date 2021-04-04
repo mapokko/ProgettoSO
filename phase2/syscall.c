@@ -1,17 +1,20 @@
 #include "exceptions.h"
-#include "initial.h"
+#include "init.h"
 #include "scheduler.h"
-#include "pcb.h"
-#include "asl.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
 
+pcb_t *verhogen(int *semAddrV);
+
+/*gestore delle SYSCALL*/
 void syscallHandler(){
-	static unsigned int syscallCode;
-	syscallCode = currentState->reg_a0;
+    /*incremento del program counter
+     *per evitare loop infinito
+    */
     currentState->pc_epc += 4;
 	
-	switch (syscallCode){
+    /*cedo controllo alla SYSCALL richiesta*/
+	switch (currentState->reg_a0){
 		case CREATEPROCESS: 
 		create_Process(currentState->reg_a1, currentState->reg_a2);
 		break;
@@ -42,90 +45,157 @@ void syscallHandler(){
 	}
 }
 
-void updateCPUtime(){
-	unsigned int tod;
-	STCK(tod);
-	currentProcess->p_time += tod - processStartTime;
-}
 
+/*SYSCALL 1*/
 void create_Process(state_t *statep, support_t *supportp){
-	static pcb_t *newPcb;
+    /*alloco nuovo pcb*/
+	pcb_t *newPcb;
 	newPcb = allocPcb();
 
+    /*se non è possibile allocare
+     *comunica al processo e
+     *restituisci controllo
+    */
 	if(newPcb == NULL){
         currentState->reg_v0 = -1;
         LDST(currentState);
 	}
 
+    /*copio nel nuovo pcb i dati passati per parametro*/
 	memcpy(statep, &(newPcb->p_s), sizeof(state_t));
 	newPcb->p_supportStruct = supportp;
 
+    /*inizializzo campi del pcb*/
 	newPcb->p_time = 0;
 	newPcb->p_semAdd = NULL;
 	newPcb->p_s.status = IEPON | TEBITON | IMON; //non so se questo status sia corretto per i nuovi pcb
 
+    /*rendo il nuovo pcb figlio del pcb corrente
+     *e inserisco il pcb nella readyQ
+    */
 	insertChild(currentProcess, newPcb);
 	insertProcQ(&readyQ, newPcb);
 
+    /*comunico al processo corrente
+     *che allocazione è OK
+     *e incremento processi attivi
+    */
 	currentState->reg_v0 = 0;
 	processCount++;
 
+    /*restituisco controllo all'esecuzione corrente*/
 	LDST(currentState);
 }
 
+/*SYSCALL 2*/
 void terminate_Process(){
 	
+    /*chiamata della funzione ricorsiva*/
 	terminate_ProcessRec(currentProcess->p_child);
 
+    /*rimuovo il pcb corrente
+    *dalla lista dei figli di suo padre e
+    *lo restituisco alla lista dei pcb liberi
+    */
     outChild(currentProcess);
 	freePcb(currentProcess);
 
+    /*decremento numeri di processi
+     *attivi e cedo controllo
+     *allo scheduler
+    */
 	processCount--;
 	scheduler();
 }
-
-void terminate_ProcessRec(pcb_t *child){
-	if(child == NULL){
+/*ricorsione della SYSCALL 2*/
+void terminate_ProcessRec(pcb_t *pcbPointer){
+    /*condizione di terminazione della ricorsione*/
+	if(pcbPointer == NULL){
 		return;
 	}
 
-	terminate_ProcessRec(child->p_child);
-	terminate_ProcessRec(child->p_next_sib);
+    /*chiamata ricorsiva sul figlio*/
+	terminate_ProcessRec(pcbPointer->p_child);
+    /*chiamata ricorsiva sul fratello*/
+	terminate_ProcessRec(pcbPointer->p_next_sib);
 
-	outChild(child);
-	outProcQ(&readyQ, child);
+    /*rimuovo il pcb dalla sua lista di 
+     *fratello e dalla readyQ
+    */
+	outChild(pcbPointer);
+	outProcQ(&readyQ, pcbPointer);
 
-	if(outBlocked(child) != NULL){
-		*(child->p_semAdd) = *(child->p_semAdd) + 1;
+    /*rimuovo il pcb dalla sua queue
+     *dei pcb bloccati
+     *se la rimozione avviene aggiorno il
+     *semaforo e il numero di processi bloccati
+    */
+	if(outBlocked(pcbPointer) != NULL){
+		*(pcbPointer->p_semAdd) = *(pcbPointer->p_semAdd) + 1;
 		blockedCount--;
 	}
 
-	freePcb(child);
+    /*restituisco il pcb
+     *alla lista libera e
+     *aggiorno il numero di
+     processu attivi
+    */
+	freePcb(pcbPointer);
 	processCount--;
 }
 
+/*SYSCALL 3*/
 void passeren(int* semAddrP){
+    /*decremento semaforo*/
 	*semAddrP -= 1;
 
+    /*se la risorsa non è disponibile
+     *blocca il pcb nella queue di semd_t
+    */
 	if(*semAddrP < 0){
+        /*copio stato corrente per riprendere l'esecuzione*/
         memcpy(currentState, &currentProcess->p_s, sizeof(state_t));
+        /*aggiorno il campo p_time*/
 		updateCPUtime();
+
+        /*blocco il pcb, se non è possibile, PANIC*/
 		if(insertBlocked(semAddrP, currentProcess)){
             PANIC();
         }
+        /*incremento numero di processi bloccati
+         *e chiamo scheduler
+        */
 		blockedCount++;
 		scheduler();
 	}
-
+    /*se la ricorda è disponibile, continua
+     *l'esecuzione nella CS
+    */
 	LDST(currentState);
 }
 
+/*SYSCALL 4*/
+void verhogenExternal(int *semAddrV){
+    /*chiamata di verhogene e
+     *restituzione del controllo
+    */
+	verhogen(semAddrV);
+	LDST(currentState);
+}
+
+/*V operation, usata anche internamente*/
 pcb_t *verhogen(int *semAddrV){
+    /*incremento semaforo*/
 	*semAddrV += 1;
 
+    /*se ci sono processi bloccati
+     *sblocco e lo metto nella readyQ
+    */
 	if(*semAddrV <= 0){
-		static pcb_t *unblocked;
+        /*rimuovo dai bloccati*/
+		pcb_t *unblocked;
 		unblocked = removeBlocked(semAddrV);
+        /*inserisco nella readyQ e decremento i bloccati*/
 		insertProcQ(&readyQ, unblocked);
 		blockedCount--;
 		return unblocked;
@@ -134,16 +204,15 @@ pcb_t *verhogen(int *semAddrV){
 	return NULL;
 }
 
-void verhogenExternal(int *semAddrV){
-	verhogen(semAddrV);
-	LDST(currentState);
-}
 
+/*SYSCALL 5*/
 void wait_for_IO_Device(int devNumber, int devLine, int termReadFlag){
 	
+    /*individuo il semaforo richiesto e chiamo passeren()*/
 	if(devNumber != 7){
 		passeren(&(devSem[devNumber - 3][devLine]));
 	}
+    /*controllo speciale per capire quale semaforo del terminale*/
 	else if(termReadFlag){
 		passeren(&(terSem[0][devLine]));
 	}
@@ -152,32 +221,57 @@ void wait_for_IO_Device(int devNumber, int devLine, int termReadFlag){
 	}
 }
 
+/*SYSCALL 6*/
 void get_CPU_time(){
+    /*comunico al processo corrente il p_time
+     *e restituisco il controllo
+    */
 	currentState->reg_v0 = currentProcess->p_time;
 	LDST(currentState);
 }
 
+/*SYSCALL 7*/
 void wait_clock(){
+    /*semplice passeren sul semaforo
+    *del interval timer
+    */
 	passeren(&pseudoClock);
 }
 
+/*SYSCALL 8*/
 void get_support_data(){
+    /*passo l'indirizzo della struttura di supporto
+     *e restituisco il controllo
+    */
 	currentState->reg_v0 = currentProcess->p_supportStruct;
 	LDST(currentState);
 }
 
-void passUp_orDie(int contextNumber){
+/*pass up or die*/
+void passUp_orDie(int contextPosition){
+    /*se non ha struttura di supporto, termina processo*/
 	if(currentProcess->p_supportStruct == NULL){
 		terminate_Process();
 	}
-
-	memcpy(currentState, &(currentProcess->p_supportStruct->sup_exceptState[contextNumber]), sizeof(state_t));
+    /*copio lo stato corrente nella posizione corretta*/
+	memcpy(currentState, &(currentProcess->p_supportStruct->sup_exceptState[contextPosition]), sizeof(state_t));
+    
+    /*estraggo SP, status e PC dalla struttura di controllo*/
     unsigned int stackPtr, status, progCounter;
+    stackPtr = currentProcess->p_supportStruct->sup_exceptContext[contextPosition].c_stackPtr;
+    status = currentProcess->p_supportStruct->sup_exceptContext[contextPosition].c_status;
+    progCounter = currentProcess->p_supportStruct->sup_exceptContext[contextPosition].c_pc;
 
-    stackPtr = currentProcess->p_supportStruct->sup_exceptContext[contextNumber].c_stackPtr;
-    status = currentProcess->p_supportStruct->sup_exceptContext[contextNumber].c_status;
-    progCounter = currentProcess->p_supportStruct->sup_exceptContext[contextNumber].c_pc;
-
+    /*cedo il controllo al livello di supporto*/
 	LDCXT(stackPtr, status, progCounter);
 
+}
+
+/*funzione ausiliaria per aggiornare il tempo
+ *occupato dal pcb
+*/
+void updateCPUtime(){
+	unsigned int tod;
+	STCK(tod);
+	currentProcess->p_time += tod - processStartTime;
 }

@@ -2,9 +2,6 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
-//prova
-
-
 /*processo è il valore usato per indicare la dimensione occupata da un pcb, ovvero la dimensione di una singola cella
   dentro pcbFree_table. E' usato per calcolare l'offset per raggiungere i diversi inidirizzi in ci cominciano le
   celle, ovvero i pcb di pcbFree_table*/
@@ -65,9 +62,6 @@ extern pcb_t *allocPcb(){
 
 	//viene aggiornato il puntatore alla testa della lista dei pcb liberi
 	pcbFree_h = pcbFree_h->p_next;
-
-	//vengono impostato i valori del pcb da restituire
-	//setValues(toReturn);
 
 	return toReturn;
 }
@@ -155,8 +149,7 @@ extern pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 		*tp = p->p_next;
 	}
 
-	//infine prima di restituire il pcb, ne settiamo tutti i valori a un valore neutro
-	//setValues(p);
+
 	p->p_next = p->p_prev = 0;
 	return p;
 }
@@ -229,8 +222,7 @@ extern pcb_t *outChild(pcb_t *p){
 		p->p_next_sib->p_prev_sib = p->p_prev_sib;
 	}
 
-	//settiamo a valori di p a valori neutri e lo restituiamo
-	//setValues(p);
+
 	return p;
 }
 

@@ -420,7 +420,7 @@ void p4() {
 	SYSCALL(CREATETHREAD, (int)&p4state, 0, 0);			/* start a new p4    */
 
 	SYSCALL(PASSERN, (int)&synp4, 0, 0);				/* wait for it       */
-	trueSTOP();
+	
 	print("p4 is OK\n");
 
 	SYSCALL(VERHOGEN, (int)&endp4, 0, 0);				/* V(endp4)          */
