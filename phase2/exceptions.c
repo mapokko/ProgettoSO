@@ -1,20 +1,20 @@
 #include "exceptions.h"
-#include "initial.h"
 #include "scheduler.h"
-#include "pcb.h"
-#include "asl.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
-//#include ‘/usr/include/umps3/umps/libumps.h’
 
+/*puntatore a BIOSDATAPAGE
+ *usato in molte altre funzioni
+*/
 state_t *currentState = BIOSDATAPAGE;
 
-
+/*gestore delle eccezioni*/
 void kernelExcHandler(){
-	
-    static unsigned int excCode;
-    excCode = (currentState->cause & GETEXECCODE) >> 2;
-    switch (excCode){
+
+	/*estraggo l' excCode e
+	 *cedo controllo al gestore specifico
+	 */
+    switch ((currentState->cause & GETEXECCODE) >> 2){
 		case 0: 
 		interruptHandler();
 		break;
@@ -31,10 +31,19 @@ void kernelExcHandler(){
 		passUp_orDie(GENERALEXCEPT);
 		break;
 		default: 
-		
+		passUp_orDie(GENERALEXCEPT);
 		break;
 	}
     
 
 }
 
+/*funzione per copiare strutture*/
+void memcpy(memaddr *src, memaddr *dest, unsigned int bytes){
+    
+    for(int i = 0; i < (bytes/4); i++){
+        *dest = *src;
+        dest++;
+        src++;
+    }
+}

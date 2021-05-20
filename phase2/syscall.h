@@ -6,5 +6,6 @@
 
 void syscallHandler();
 pcb_t *verhogen(int *semAddrV);
+void updateCPUtime();
 
 #endif
