@@ -61,17 +61,15 @@ initUproc() {
 
     SYSCALL(CREATEPROCESS, prestate[i], presupport[i], 0);
 
-
   }
 
 }
-
 
 InstantiatorProcess () {                                   // inizializzazione dei processi
 
   initSwapStructs ();                                      // inizializzo la swap pool ed il suo semaforo
 
-  initUproc ();
+  initUproc();                                           // inizializzazione dei processi
 
 
 }
