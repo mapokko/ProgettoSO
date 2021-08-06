@@ -25,7 +25,7 @@ DEFS = ../h/const.h ../h/types.h ../h/pcb.h ../h/asl.h \
 
 OBJS = init.o exceptions.o syscall.o interrupt.o scheduler.o asl.o pcb.o
 
-CFLAGS = -ffreestanding -std=c99 -w -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls -I.
+CFLAGS = -ffreestanding -std=c99 -Wall -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls -I.
 
 LDAOUTFLAGS = -G 0 -nostdlib -T $(SUPDIR)/umpsaout.ldscript
 LDCOREFLAGS =  -G 0 -nostdlib -T $(SUPDIR)/umpscore.ldscript
