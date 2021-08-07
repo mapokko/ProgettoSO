@@ -5,11 +5,6 @@
 #include <pandos_const.h>
 #include "vmSupport.h"
 
- swap_t *sw_p;
- int semSP;
- int fifono;
-
-
  void initSwapStructs () {                                 //inizializzazione strutture
 
    fifono=0;

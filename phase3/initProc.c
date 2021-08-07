@@ -6,8 +6,6 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
-int ioSem [UPROCMAX][2];
-
 
 initioSem () {                                             // inizializzazione dei semafori dei device
 
