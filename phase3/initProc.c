@@ -23,12 +23,12 @@ initPageTable (ptEntry_t* pointer, int processno) {
 
   for (i = 0; i < MAXPAGES-1, i++) {
 
-    pointer[i]->pt_entryHI = (processno << ASIDSHIFT) | ((0x80000+1) << VPNSHIFT);
+    pointer[i]->pt_entryHI = (processno << ASIDSHIFT) | ((0x80000 + i + 1) << VPNSHIFT);
     pointer[i]->pt_entryLO = DIRTYON | VALIDON;
 
   }
 
-    pointer[i]->pt_entryHI = (0xBFFFF) | ((0x80000+1) << VPNSHIFT);
+    pointer[i]->pt_entryHI = (0xBFFFF << ASIDSHIFT) | ((0x80000+1) << VPNSHIFT);
     pointer[i]->pt_entryLO = DIRTYON | VALIDON;
 
 }

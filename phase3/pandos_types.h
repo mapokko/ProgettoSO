@@ -31,8 +31,8 @@ typedef struct support_t {
     state_t   sup_exceptState[2];   /* old state exceptions			*/
     context_t sup_exceptContext[2]; /* new contexts for passing up	*/
     ptEntry_t sup_privatePgTbl[USERPGTBLSIZE]; /* the page table*/
-    int sup stackTLB[500];
-    int sup stackGen[500];
+    int sup_stackTLB[500];
+    int sup_stackGen[500];
 } support_t;
 
 /* process table entry type */
@@ -73,7 +73,7 @@ typedef struct semd_t {
 typedef struct swap_t  {
     int         sw_asid;   /* ASID			*/
     int         sw_page;
-    ptEntry_t *sw_pt;
+    ptEntry_t   *sw_pt;
 } swap_t;
 
 #endif
