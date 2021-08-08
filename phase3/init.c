@@ -1,7 +1,8 @@
 #include "init.h"
 #include "exceptions.h"
 #include "scheduler.h"
-#include "p2test.h"
+//#include "p2test.h"
+#include "initProc.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
 
@@ -15,9 +16,9 @@ void main(){
     pcb_t *firstPcb;
     firstPcb = allocPcb();
     processCount++;
-    firstPcb->p_s.status = IEPON | TEBITON | IMON;
+    firstPcb->p_s.status = IEPON | IMON;
     RAMTOP(firstPcb->p_s.reg_sp);
-    firstPcb->p_s.pc_epc = firstPcb->p_s.reg_t9 = (memaddr) test;
+    firstPcb->p_s.pc_epc = firstPcb->p_s.reg_t9 = (memaddr) instantiatorProcess;
 
     /*inserimento del primo pcb nella readyQ e chiamata dello scheduler*/
     insertProcQ(&readyQ, firstPcb);
@@ -51,7 +52,3 @@ void initSystem(){
     LDIT(PSECOND);
 
 }
-
-
-
-void FERMATI(){;}

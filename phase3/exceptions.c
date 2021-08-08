@@ -1,5 +1,6 @@
 #include "exceptions.h"
 #include "scheduler.h"
+#include "init.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
 
@@ -36,6 +37,33 @@ void kernelExcHandler(){
 	}
     
 
+}
+
+/* TLB-Refill Handler */
+/* One can place debug calls here, but not calls to print */
+void uTLB_RefillHandler () {
+
+	static unsigned int entropy;
+	entropy = currentState->entry_hi;
+	static pteEntry_t *eccolo;
+
+	for(int i = 0; i < USERPGTBLSIZE - 1; i++){
+		if(entropy == currentProcess->p_supportStruct->sup_privatePgTbl[i].pte_entryHI){
+			eccolo = &(currentProcess->p_supportStruct->sup_privatePgTbl[i]);
+		}
+	}
+
+	setENTRYHI(eccolo->pte_entryHI);
+	setENTRYLO(eccolo->pte_entryLO);
+	TLBWR();
+
+		
+	// setENTRYHI(0x80000000);
+	// setENTRYLO(0x00000000);
+	// TLBWR();	
+	
+	LDST ((state_t *) 0x0FFFF000);
+	
 }
 
 /*funzione per copiare strutture*/
