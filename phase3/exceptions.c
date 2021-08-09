@@ -1,6 +1,7 @@
 #include "exceptions.h"
 #include "scheduler.h"
 #include "init.h"
+#include "syscall.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
 
