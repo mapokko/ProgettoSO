@@ -12,6 +12,10 @@ state_t *currentState = BIOSDATAPAGE;
 /*gestore delle eccezioni*/
 void kernelExcHandler(){
 
+	//per vedere il motivo dell'eccezione decommentare sotto e cercare "temp" in umps3
+	// static int temp;
+	// temp = (currentState->cause & GETEXECCODE) >> 2;
+
 	/*estraggo l' excCode e
 	 *cedo controllo al gestore specifico
 	 */
@@ -43,6 +47,8 @@ void kernelExcHandler(){
 /* One can place debug calls here, but not calls to print */
 void uTLB_RefillHandler () {
 
+	//refill Handler forse funzionante, ancora da testare
+
 	static unsigned int entropy;
 	entropy = currentState->entry_hi;
 	static pteEntry_t *eccolo;
@@ -50,11 +56,12 @@ void uTLB_RefillHandler () {
 	for(int i = 0; i < USERPGTBLSIZE - 1; i++){
 		if(entropy == currentProcess->p_supportStruct->sup_privatePgTbl[i].pte_entryHI){
 			eccolo = &(currentProcess->p_supportStruct->sup_privatePgTbl[i]);
+			break;
 		}
 	}
-
-	setENTRYHI(eccolo->pte_entryHI);
-	setENTRYLO(eccolo->pte_entryLO);
+	static int entrHI, entrLO;
+	entrHI = setENTRYHI(eccolo->pte_entryHI);
+	entrLO = setENTRYLO(eccolo->pte_entryLO);
 	TLBWR();
 
 		

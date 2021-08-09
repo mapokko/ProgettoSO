@@ -16,7 +16,7 @@ void main(){
     pcb_t *firstPcb;
     firstPcb = allocPcb();
     processCount++;
-    firstPcb->p_s.status = IEPON | IMON;
+    firstPcb->p_s.status = IEPON | IMON | TEBITON;
     RAMTOP(firstPcb->p_s.reg_sp);
     firstPcb->p_s.pc_epc = firstPcb->p_s.reg_t9 = (memaddr) instantiatorProcess;
 
