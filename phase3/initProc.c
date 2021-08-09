@@ -42,12 +42,12 @@ void initUProc(){
 
 void instantiatorProcess(){
 
-    /*qui ci deve essere inizializzazione di swap pool table*/
+    initSwapPool();
 
     /*qui ci sarebbe inizializzaione dei semafori per i device ma..sono già presenti in init.c??*/
-
-    initUProc();
     FERMATI();
+    initUProc();
+    
     SYSCALL(PASSEREN, &(privsem), 0, 0);
 }
 
