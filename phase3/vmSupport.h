@@ -9,6 +9,7 @@ extern int swapPoolSem;
 void initSwapPool();
 
 void Pager();
+void initSupSem();
 
 
 #endif

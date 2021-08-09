@@ -44,7 +44,8 @@ void instantiatorProcess(){
 
     initSwapPool();
 
-    /*qui ci sarebbe inizializzaione dei semafori per i device ma..sono già presenti in init.c??*/
+    initSupSem();
+
     FERMATI();
     initUProc();
     
