@@ -5,12 +5,25 @@
 
 swap_t swapPoolTable[POOLSIZE];
 int swapPoolSem;
+static int fifoNo = 0;
 
 void Pager(){
     support_t *sPtr = SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    unsigned int exCause = (sPtr->sup_exceptState[PGFAULTEXCEPT].cause & GETEXECCODE) >> 2;
+    state_t *exState = &(sPtr->sup_exceptState[PGFAULTEXCEPT]);
+    unsigned int exCause = (exState->cause & GETEXECCODE) >> 2;
 
-    if(exCause == 1){
+    if(exCause == 1 ){
+
+    }
+
+    SYSCALL(PASSEREN, &(swapPoolSem), 0, 0);
+
+    int excPageNo = (exState->entry_hi & GETPAGENO) >> 12;
+    swap_t *framePtr = pagingFIFO();
+
+    if(framePtr->sw_asid != -1){
+        framePtr->sw_pte->pte_entryLO |= !(VALIDON);
+        updateTLB(framePtr->sw_pte);
 
     }
 
@@ -30,5 +43,22 @@ void initSwapPool(){
         swapPoolTable[i].sw_asid = -1;
         swapPoolTable[i].sw_pageNo = 0;
         swapPoolTable[i].sw_pte = NULL;
+    }
+}
+
+swap_t* pagingFIFO(){
+    //verificare ordine di valutazione di fifoNo++
+    return &(swapPoolTable[fifoNo++ % POOLSIZE]);
+}
+
+void updateTLB(pteEntry_t *entry){
+
+    setENTRYHI(entry->pte_entryHI);
+    TLBP();
+
+    if(getINDEX() & PRESENTFLAG){
+        setENTRYHI(entry->pte_entryHI);
+        setENTRYLO(entry->pte_entryLO);
+        TLBWI();
     }
 }
