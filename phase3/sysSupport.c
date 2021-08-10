@@ -5,10 +5,13 @@
 
 void generalSupHandler(){
     support_t *sPtr = SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    unsigned int exCause = (sPtr->sup_exceptState[PGFAULTEXCEPT].cause & GETEXECCODE) >> 2;
+    static unsigned int genExCause;
+    genExCause = (sPtr->sup_exceptState[GENERALEXCEPT].cause & GETEXECCODE) >> 2;
+    static unsigned int a0Val;
+    a0Val = sPtr->sup_exceptState[GENERALEXCEPT].reg_a0;
 
-    if(exCause == 8){
-        supportSyscallHandler(&(sPtr->sup_exceptState[PGFAULTEXCEPT]));
+    if(genExCause == 8){
+        supportSyscallHandler(&(sPtr->sup_exceptState[GENERALEXCEPT]));
     }
     else{
         

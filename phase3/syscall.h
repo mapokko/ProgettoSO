@@ -7,5 +7,6 @@
 void syscallHandler();
 pcb_t *verhogen(int *semAddrV);
 void updateCPUtime();
+void passUp_orDie(int contextPosition);
 
 #endif

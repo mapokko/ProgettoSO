@@ -1,10 +1,10 @@
-#include <pandos_types.h>
-#include <pandos_const.h>
-#ifndef INITIAL_H_INCLUDED
-#define INITIAL_H_INCLUDED
+#include "pandos_const.h"
+#include "pandos_types.h"
+#include <umps3/umps/libumps.h>
+#ifndef INITPROC_H_INCLUDED
+#define INITPROC_H_INCLUDED
 
-int ioSem [UPROCMAX][2];
-
-InstantiatorProcess ()
+void instantiatorProcess();
+void FERMATI();
 
 #endif

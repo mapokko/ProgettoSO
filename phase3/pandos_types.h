@@ -15,10 +15,10 @@ typedef signed int   cpu_t;
 typedef unsigned int memaddr;
 typedef state_t *state_PTR;
 
-typedef struct ptEntry_t {
-    unsigned int pt_entryHI;
-    unsigned int pt_entryLO;
-} ptEntry_t;
+typedef struct pteEntry_t {
+    unsigned int pte_entryHI;
+    unsigned int pte_entryLO;
+} pteEntry_t;
 
 typedef struct context_t {
     unsigned int c_stackPtr;
@@ -30,9 +30,9 @@ typedef struct support_t {
     int       sup_asid;             /* process ID					*/
     state_t   sup_exceptState[2];   /* old state exceptions			*/
     context_t sup_exceptContext[2]; /* new contexts for passing up	*/
-    ptEntry_t sup_privatePgTbl[USERPGTBLSIZE]; /* the page table*/
-    int sup_stackTLB[500];
-    int sup_stackGen[500];
+    pteEntry_t sup_privatePgTbl[USERPGTBLSIZE];     /* user page table  */
+    int sup_stackTLB[500];                          /* stack area for the process’s TLB exception handler   */
+    int sup_stackGen[500];                          /* stack area for the process’s Support Level general exception handler */                 
 } support_t;
 
 /* process table entry type */
@@ -50,12 +50,19 @@ typedef struct pcb_t {
     /* process status information */
     state_t p_s;                /* processor state        */
     cpu_t   p_time;             /* cpu time used by proc		*/
-
+            
     /* add more fields here */
     int *p_semAdd;
     support_t *p_supportStruct;
 
 } pcb_t, *pcb_PTR;
+
+/* Page swap pool information structure type */
+typedef struct swap_t {
+    int         sw_asid;   /* ASID number			*/
+    int         sw_pageNo; /* page's virt page no.	*/
+    pteEntry_t *sw_pte;    /* page's PTE entry.	*/
+} swap_t;
 
 typedef struct semd_t {
 	/* ptr to next element on queue */
@@ -70,10 +77,5 @@ typedef struct semd_t {
 
 } semd_t, *semd_PTR;
 
-typedef struct swap_t  {
-    int         sw_asid;   /* ASID			*/
-    int         sw_page;
-    ptEntry_t   *sw_pt;
-} swap_t;
 
 #endif
