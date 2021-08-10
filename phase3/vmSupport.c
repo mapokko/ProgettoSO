@@ -14,8 +14,8 @@ swap_t* pagingFIFO(memaddr *frame);
 /*  i semafori di supporto sono così strutturati: (SOGGETTO AD EVENTUALE COMBIAMENTO)
     *i semafori supDevSem[0][0...7] definiscono i device flash (in ordine)
     *i semafori supDevSem[1][0...7] definiscono i printer (in ordine) 
-    *i semafori supDevSem[2][0...7] definiscono i terminali in lettura (in ordine)
-    *i semafori supDevSem[3][0...7] definiscono i terminali in scrittura (in ordine)*/
+    *i semafori supDevSem[2][0...7] definiscono i terminali in scrittura (in ordine)
+    *i semafori supDevSem[3][0...7] definiscono i terminali in lettura (in ordine)*/
 int supDevSem[4][8];
 
 void Pager(){
