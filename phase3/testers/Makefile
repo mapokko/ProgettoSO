@@ -28,7 +28,10 @@ EF = umps3-elf2umps
 UDEV = umps3-mkdev
 
 #main target
-all: strConcat.umps
+all: printerTest.umps strConcat.umps \
+	fibEight.umps fibEleven.umps \
+	terminalTest2.umps terminalTest3.umps terminalTest4.umps \
+	terminalTest5.umps  \
 
 	
 	

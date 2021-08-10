@@ -6,8 +6,6 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
-
-
 void main(){
 
     initSystem();
@@ -16,7 +14,7 @@ void main(){
     pcb_t *firstPcb;
     firstPcb = allocPcb();
     processCount++;
-    firstPcb->p_s.status = IEPON | IMON | TEBITON;
+    firstPcb->p_s.status = IEPON | IMON;
     RAMTOP(firstPcb->p_s.reg_sp);
     firstPcb->p_s.pc_epc = firstPcb->p_s.reg_t9 = (memaddr) instantiatorProcess;
 

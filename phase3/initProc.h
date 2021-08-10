@@ -5,5 +5,6 @@
 #define INITPROC_H_INCLUDED
 
 void instantiatorProcess();
+void FERMATI();
 
 #endif

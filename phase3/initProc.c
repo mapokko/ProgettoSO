@@ -13,14 +13,16 @@ void initUPageTable(int ASID){
         supportTable[ASID].sup_privatePgTbl[i].pte_entryHI = ((0x80000 | i ) << VPNSHIFT) | ((ASID + 1) << ASIDSHIFT);
         supportTable[ASID].sup_privatePgTbl[i].pte_entryLO = DIRTYON;
     }
-
+    static unsigned int stackAddr;
+    stackAddr = (0xBFFFF << VPNSHIFT) | ((ASID + 1) << ASIDSHIFT);
+    FERMATI3();
     supportTable[ASID].sup_privatePgTbl[31].pte_entryHI = (0xBFFFF << VPNSHIFT) | ((ASID + 1) << ASIDSHIFT);
     supportTable[ASID].sup_privatePgTbl[31].pte_entryLO = DIRTYON;
 
 }
 
 void initUProc(){
-    for(int i = 0; i < UPROCMAX; i++){
+    for(int i = 0; i < 2; i++){
         state_t newState;
         newState.pc_epc = newState.reg_t9 = UPROCSTARTADDR;
         newState.reg_sp = USERSTACKTOP;
@@ -32,7 +34,7 @@ void initUProc(){
         supportTable[i].sup_exceptContext[GENERALEXCEPT].c_pc = (memaddr *) generalSupHandler;
         supportTable[i].sup_exceptContext[PGFAULTEXCEPT].c_stackPtr = &(supportTable[i].sup_stackTLB[499]);
         supportTable[i].sup_exceptContext[GENERALEXCEPT].c_stackPtr = &(supportTable[i].sup_stackGen[499]);
-        supportTable[i].sup_exceptContext[PGFAULTEXCEPT].c_status = supportTable[i].sup_exceptContext[GENERALEXCEPT].c_status = IMON | TEBITON | IEPON;
+        supportTable[i].sup_exceptContext[PGFAULTEXCEPT].c_status = supportTable[i].sup_exceptContext[GENERALEXCEPT].c_status = IMON | IEPON;
 
         initUPageTable(i);
 
@@ -46,10 +48,12 @@ void instantiatorProcess(){
 
     initSupSem();
 
-    FERMATI();
+    
     initUProc();
     
     SYSCALL(PASSEREN, &(privsem), 0, 0);
 }
 
 void FERMATI(){}
+
+void FERMATI3(){}

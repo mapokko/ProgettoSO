@@ -14,8 +14,8 @@ state_t *currentState = BIOSDATAPAGE;
 void kernelExcHandler(){
 
 	//per vedere il motivo dell'eccezione decommentare sotto e cercare "temp" in umps3
-	// static int temp;
-	// temp = (currentState->cause & GETEXECCODE) >> 2;
+	static int temp;
+	temp = (currentState->cause & GETEXECCODE) >> 2;
 
 	/*estraggo l' excCode e
 	 *cedo controllo al gestore specifico
@@ -54,12 +54,13 @@ void uTLB_RefillHandler () {
 	entropy = currentState->entry_hi;
 	static pteEntry_t *eccolo;
 
-	for(int i = 0; i < USERPGTBLSIZE - 1; i++){
+	for(int i = 0; i < USERPGTBLSIZE; i++){
 		if(entropy == currentProcess->p_supportStruct->sup_privatePgTbl[i].pte_entryHI){
 			eccolo = &(currentProcess->p_supportStruct->sup_privatePgTbl[i]);
 			break;
 		}
 	}
+	Fermati2();
 	static int entrHI, entrLO;
 	entrHI = setENTRYHI(eccolo->pte_entryHI);
 	entrLO = setENTRYLO(eccolo->pte_entryLO);
@@ -83,3 +84,5 @@ void memcpy(memaddr *src, memaddr *dest, unsigned int bytes){
         src++;
     }
 }
+
+void Fermati2(){};
