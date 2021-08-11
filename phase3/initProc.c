@@ -22,13 +22,13 @@ void initUPageTable(int ASID){
 }
 
 void initUProc(){
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < 1; i++){
         state_t newState;
         newState.pc_epc = newState.reg_t9 = UPROCSTARTADDR;
         newState.reg_sp = USERSTACKTOP;
         newState.status = TEBITON | IMON | IEPON | USERPON;
         newState.entry_hi = (i + 1) << ASIDSHIFT;
-
+        
         supportTable[i].sup_asid = i + 1;
         supportTable[i].sup_exceptContext[PGFAULTEXCEPT].c_pc = (memaddr *) Pager;
         supportTable[i].sup_exceptContext[GENERALEXCEPT].c_pc = (memaddr *) generalSupHandler;

@@ -14,8 +14,8 @@ swap_t* pagingFIFO(memaddr *frame);
 /*  i semafori di supporto sono così strutturati: (SOGGETTO AD EVENTUALE COMBIAMENTO)
     *i semafori supDevSem[0][0...7] definiscono i device flash (in ordine)
     *i semafori supDevSem[1][0...7] definiscono i printer (in ordine) 
-    *i semafori supDevSem[2][0...7] definiscono i terminali in lettura (in ordine)
-    *i semafori supDevSem[3][0...7] definiscono i terminali in scrittura (in ordine)*/
+    *i semafori supDevSem[2][0...7] definiscono i terminali in scrittura (in ordine)
+    *i semafori supDevSem[3][0...7] definiscono i terminali in lettura (in ordine)*/
 int supDevSem[4][8];
 
 void Pager(){
@@ -32,7 +32,9 @@ void Pager(){
 
     static int excPageNo;
 
-    excPageNo = (exState->entry_hi & GETPAGENO) >> 12;
+
+    excPageNo = (exState->entry_hi & GETPAGENO) >> VPNSHIFT;
+
     if(excPageNo == 0x3FFFF){
         excPageNo = 31;
     }
@@ -41,14 +43,36 @@ void Pager(){
     poolTablePtr = pagingFIFO(&(frameAddr));
 
     if(poolTablePtr->sw_asid != -1){
-        /*occhio agli interrupt, pandOS consiglia di disabilitarli con setSTATUS*/
-        poolTablePtr->sw_pte->pte_entryLO |= ~VALIDON;
-        updateTLB(poolTablePtr->sw_pte);
-        /*da finire: manca la riscrittura nel flash device del frame*/
+
+
+        setSTATUS(getSTATUS() & ~IECON);
+
+        poolTablePtr->sw_pte->pte_entryLO &= ~VALIDON;
+        
+        setENTRYHI(poolTablePtr->sw_pte->pte_entryHI);
+        TLBP();
+        if(getINDEX() & PRESENTFLAG){
+            setENTRYLO(poolTablePtr->sw_pte->pte_entryLO);
+            TLBWI();
+        }
+
+        setSTATUS(getSTATUS() | IECON);
+        
+        static int blockToUpload, PFNtoUpload;
+
+        blockToUpload = (poolTablePtr->sw_pte->pte_entryHI & GETPAGENO) >> VPNSHIFT;
+        if(blockToUpload == 0x3FFFF){
+            blockToUpload = 31;
+        }
+
+        PFNtoUpload = poolTablePtr->sw_pte->pte_entryLO & 0xFFFFF000;
+
+        RWflash(blockToUpload, PFNtoUpload, poolTablePtr->sw_asid - 1, FLASHWRITE);
 
     }
     
-    readFromFlash(excPageNo, frameAddr, sPtr->sup_asid - 1);
+    RWflash(excPageNo, frameAddr, sPtr->sup_asid - 1, FLASHREAD);
+
 
     poolTablePtr->sw_asid = sPtr->sup_asid;
     poolTablePtr->sw_pageNo = excPageNo;
@@ -93,10 +117,9 @@ void initSwapPool(){
 }
 
 swap_t* pagingFIFO(memaddr *frame){
-    //verificare ordine di valutazione di fifoNo++
+
     fifoNo++;
-    static int val;
-    val = (0x1000 * (fifoNo % POOLSIZE));
+
     *frame = swapPoolPtr + (0x1000 * (fifoNo % POOLSIZE));
     return &(swapPoolTable[fifoNo % POOLSIZE]);
 }
@@ -116,7 +139,9 @@ void updateTLB(pteEntry_t *entry){
     }
 }
 
-void readFromFlash(int blockNo, memaddr ramAddr, int flashDevNo){
+
+void RWflash(int blockNo, memaddr ramAddr, int flashDevNo, int flag){
+
 
     SYSCALL(PASSEREN, &(supDevSem[0][flashDevNo]), 0, 0);
 
@@ -125,7 +150,9 @@ void readFromFlash(int blockNo, memaddr ramAddr, int flashDevNo){
     devReg->data0 = ramAddr;
 
     setSTATUS(getSTATUS() & ~IECON);
-    devReg->command = (blockNo << 8) | FLASHREAD;
+
+    devReg->command = (blockNo << 8) | flag;
+
     
     SYSCALL(IOWAIT, FLASHINT, flashDevNo, 0);
     
