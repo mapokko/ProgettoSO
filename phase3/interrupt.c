@@ -120,7 +120,7 @@ void terminalHandler(){
      *ricezione dal device register
     */
 	status = terminalRegister->recv_status;
-
+    
     /*2 cicli:
      *1: gestione interrupt da ricezione
      *2: gestione interrutp da trasmissione
@@ -148,6 +148,7 @@ void terminalHandler(){
         }
         /*passo a status della trasmissione*/
         status = terminalRegister->transm_status;
+        unblockedPcb = NULL;
     }
 	
     /*se c'è un processo in esecuzione, LDST()
@@ -198,3 +199,5 @@ int getLine(int bitmap){
 memaddr *getDevReg(int devNumber, int interruptingDeviceNumber){
 	return DEVICEREGISTERBASE + ((devNumber - 3) * 0x80) + ((interruptingDeviceNumber) * 0x10);
 }
+
+FERMATIint(){}

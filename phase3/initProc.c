@@ -22,7 +22,7 @@ void initUPageTable(int ASID){
 }
 
 void initUProc(){
-    for(int i = 0; i < 1; i++){
+    for(int i = 0; i < 2; i++){
         state_t newState;
         newState.pc_epc = newState.reg_t9 = UPROCSTARTADDR;
         newState.reg_sp = USERSTACKTOP;

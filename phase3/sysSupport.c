@@ -134,16 +134,19 @@ void Read_From_terminal(char *stringAddr){
 
     static termreg_t *termRegRead;
     termRegRead = getDevReg(TERMINT, sPtr->sup_asid - 1);
-    int opStatusRead, count = 0;
-    static char receivedChar;
+    static int opStatusRead, count = 0;
+    char receivedChar = NULL;
     
     SYSCALL(PASSEREN, &(supDevSem[3][sPtr->sup_asid - 1]), 0, 0);
     FERMATIsys();
-    do{
+    
+    while(receivedChar != '\n'){
+
         setSTATUS(getSTATUS() & ~IECON);
         termRegRead->recv_command = 2;
         opStatusRead = SYSCALL(IOWAIT, TERMINT, sPtr->sup_asid - 1, 1);
         setSTATUS(getSTATUS() & IECON);
+
         receivedChar = (opStatusRead & 0xFF00) >> 8;
         *stringAddr = receivedChar;
         if((opStatusRead & 0xFF) != 5){
@@ -152,7 +155,7 @@ void Read_From_terminal(char *stringAddr){
         count++;
         stringAddr++;
         FERMATIsys();
-    }while(receivedChar != EOS);
+    }
 
     if ( (opStatusRead & 0xFF) == 5) {
         sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = count;
