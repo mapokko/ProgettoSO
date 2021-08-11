@@ -4,7 +4,7 @@
 #include "interrupt.h"
 #include "initProc.h"
 #include <umps3/umps/libumps.h>
-extern devSem[4][8];
+
 swap_t swapPoolTable[POOLSIZE];
 static memaddr swapPoolPtr;
 int swapPoolSem;
