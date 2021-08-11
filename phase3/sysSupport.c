@@ -17,7 +17,7 @@ void generalSupHandler(){
         supportSyscallHandler(&(sPtr->sup_exceptState[GENERALEXCEPT]));
     }
     else{
-
+        trapHandler(sPtr->sup_asid - 1);
     }
 }
 
@@ -123,6 +123,15 @@ void Write_To_Terminal(char *string, int len){
     SYSCALL(VERHOGEN, &(supDevSem[2][sPtr->sup_asid - 1]), 0, 0);
     FERMATIsys();
     LDST(&(sPtr->sup_exceptState[GENERALEXCEPT]));
+}
+
+void trapHandler(int supSem){
+    for(int i = 0; i < 4; i++){
+        if(!(supDevSem[i][supSem])){
+            SYSCALL(VERHOGEN, &(supDevSem[i][supSem]), 0, 0);
+        }   
+    }
+    terminate();
 }
 
 void FERMATIsys(){}
