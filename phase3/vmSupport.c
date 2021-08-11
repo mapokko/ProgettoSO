@@ -32,7 +32,9 @@ void Pager(){
 
     static int excPageNo;
 
+
     excPageNo = (exState->entry_hi & GETPAGENO) >> VPNSHIFT;
+
     if(excPageNo == 0x3FFFF){
         excPageNo = 31;
     }
@@ -41,6 +43,7 @@ void Pager(){
     poolTablePtr = pagingFIFO(&(frameAddr));
 
     if(poolTablePtr->sw_asid != -1){
+
 
         setSTATUS(getSTATUS() & ~IECON);
 
@@ -69,6 +72,7 @@ void Pager(){
     }
     
     RWflash(excPageNo, frameAddr, sPtr->sup_asid - 1, FLASHREAD);
+
 
     poolTablePtr->sw_asid = sPtr->sup_asid;
     poolTablePtr->sw_pageNo = excPageNo;
@@ -113,8 +117,9 @@ void initSwapPool(){
 }
 
 swap_t* pagingFIFO(memaddr *frame){
+
     fifoNo++;
-    
+
     *frame = swapPoolPtr + (0x1000 * (fifoNo % POOLSIZE));
     return &(swapPoolTable[fifoNo % POOLSIZE]);
 }
@@ -134,7 +139,9 @@ void updateTLB(pteEntry_t *entry){
     }
 }
 
+
 void RWflash(int blockNo, memaddr ramAddr, int flashDevNo, int flag){
+
 
     SYSCALL(PASSEREN, &(supDevSem[0][flashDevNo]), 0, 0);
 
@@ -143,7 +150,9 @@ void RWflash(int blockNo, memaddr ramAddr, int flashDevNo, int flag){
     devReg->data0 = ramAddr;
 
     setSTATUS(getSTATUS() & ~IECON);
+
     devReg->command = (blockNo << 8) | flag;
+
     
     SYSCALL(IOWAIT, FLASHINT, flashDevNo, 0);
     
