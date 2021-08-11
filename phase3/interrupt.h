@@ -5,6 +5,7 @@
 #define INTERRUPT_H_INCLUDED
 
 void interruptHandler();
+memaddr *getDevReg(int devNumber, int interruptingDeviceNumber);
 
 
 #endif
