@@ -55,10 +55,9 @@ void getTOD(state_t *suppState){
 }
 
 void Write_To_Printer (char *string, int len) {
-     if(len>128 || len<1) {
+     if(len>128 || len<1 || string < 0x80000000 || string > 0xC0000000 ){
 
         SYSCALL(TERMPROCESS, 0, 0, 0);
-
     }
 
     dtpreg_t *printReg = getDevReg(PRNTINT, sPtr->sup_asid - 1);
@@ -74,7 +73,7 @@ void Write_To_Printer (char *string, int len) {
         setSTATUS(getSTATUS() | IECON);
 
         if(opStatusP != 1){
-            //program trap chiamata qui
+            break;
         }
         string++;
         FERMATIsys();
@@ -93,7 +92,7 @@ void Write_To_Printer (char *string, int len) {
 
 void Write_To_Terminal(char *string, int len){
 
-    if(len < 0 || len > 128){
+    if(len < 0 || len > 128 || string < 0x80000000 || string > 0xC0000000){
         terminate();
     }
 
@@ -110,7 +109,7 @@ void Write_To_Terminal(char *string, int len){
         setSTATUS(getSTATUS() & ~IECON);
         
         if((opStatus & 0xFF) != 5){
-            //chimata di program trap
+            break;
         }
         string++;
     }
