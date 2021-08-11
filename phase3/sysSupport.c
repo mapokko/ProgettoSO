@@ -31,7 +31,7 @@ void supportSyscallHandler(state_t *genState){
         getTOD(genState);
         break;
         case WRITEPRINTER:
-
+        Write_To_Printer(genState->reg_a1, genState->reg_a2);
         break;
         case WRITETERMINAL:
         Write_To_Terminal(genState->reg_a1, genState->reg_a2);
@@ -54,45 +54,41 @@ void getTOD(state_t *suppState){
     LDST(suppState); /*serve????*/
 }
 
-void Write_To_Printer () {
+void Write_To_Printer (char *string, int len) {
+     if(len>128 || len<1) {
 
-  int stringL = currentState->reg_a2;
+        SYSCALL(TERMPROCESS, 0, 0, 0);
 
-  if(stringL>128 || stringL<1) {
+    }
 
-    SYSCALL(TERMPROCESS, 0, 0, 0);
+    dtpreg_t *printReg = getDevReg(PRNTINT, sPtr->sup_asid - 1);
+    static int opStatusP = 0;
+    SYSCALL(PASSEREN, &(supDevSem[1][sPtr->sup_asid - 1]), 0, 0);
 
-  }
+    while(*string != EOS){
+        printReg->data0 = *string;
 
-  support_t *Ptr = SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-  int DevNo = Ptr->sup_asid;
-  dtpreg_t *devReg;
-  devReg = getDevReg(4, DevNo);
-  devReg->command = BACKWRITE;
-  int* number;
-  number = currentState->reg_a1;
-  devReg->data0 = *number;
+        setSTATUS(getSTATUS() & ~IECON);
+        printReg->command = 2;
+        opStatusP = SYSCALL(IOWAIT, PRNTINT, sPtr->sup_asid - 1, 0);
+        setSTATUS(getSTATUS() | IECON);
 
-  for (int i = 0; i < stringL; i++) {
+        if(opStatusP != 1){
+            //program trap chiamata qui
+        }
+        string++;
+        FERMATIsys();
+    }
 
-    SYSCALL(IOWAIT, FLASHINT, flashDevNo, 0);
+    if ( opStatusP == 1) {
+        sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
 
-    number++
-    devReg->data0 = *number;
-    devReg->command = BACKWRITE;
+    } else {
+        sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = ~opStatusP;
+    }
 
-  }
-
-  if ( devReg->status == 1) {
-
-    currentState->reg_v0 = stringL;
-
-  } else {
-
-    currentState->reg_v0 = -1;
-
-  }
-
+    SYSCALL(VERHOGEN, &(supDevSem[1][sPtr->sup_asid - 1]), 0, 0);
+    LDST(&(sPtr->sup_exceptState[GENERALEXCEPT]));
 }
 
 void Write_To_Terminal(char *string, int len){
@@ -101,23 +97,33 @@ void Write_To_Terminal(char *string, int len){
         terminate();
     }
 
-    int counter = 0;
     static termreg_t *termReg;
     termReg = getDevReg(TERMINT, sPtr->sup_asid - 1);
     int opStatus;
 
     SYSCALL(PASSEREN, &(supDevSem[2][sPtr->sup_asid - 1]), 0, 0);
-    FERMATIsys();
     while(*string != EOS){
+
+        setSTATUS(getSTATUS() & ~IECON);
         termReg->transm_command = 2 | ((*string) << 8);
         opStatus = SYSCALL(IOWAIT, TERMINT, sPtr->sup_asid - 1, 0);
+        setSTATUS(getSTATUS() & ~IECON);
+        
         if((opStatus & 0xFF) != 5){
             //chimata di program trap
         }
         string++;
     }
+
+    if ( (opStatus & 0xFF) == 5) {
+        sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
+
+    } else {
+        sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = ~opStatus;
+    }
+    SYSCALL(VERHOGEN, &(supDevSem[2][sPtr->sup_asid - 1]), 0, 0);
     FERMATIsys();
-    SYSCALL(VERHOGEN, supDevSem[2][sPtr->sup_asid - 1], 0, 0);
+    LDST(&(sPtr->sup_exceptState[GENERALEXCEPT]));
 }
 
 void FERMATIsys(){}
