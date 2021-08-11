@@ -1,6 +1,7 @@
 #include "exceptions.h"
 #include "init.h"
 #include "scheduler.h"
+#include "syscall.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
 
@@ -109,7 +110,7 @@ void terminalHandler(){
     /*dichiarazione variabili per eseguire la gestione*/
 	unsigned int interruptingDeviceNum, status;
     termreg_t *terminalRegister;
-	pcb_t *unblockedPcb;
+	pcb_t *unblockedPcb = NULL;
 
     /*estrazione del registro del terminale in interrupt*/
 	interruptingDeviceNum = getLine(getBitmap(TERMINT));
@@ -136,7 +137,9 @@ void terminalHandler(){
             }
 
             /*V operation sul semaforo*/
-		    unblockedPcb = verhogen(&(terSem[i][interruptingDeviceNum]));
+            if((status & 0xff) == 5){
+                unblockedPcb = verhogen(&(terSem[i][interruptingDeviceNum]));
+            }
 
             /*se V operation OK, scrivo status nel registro reg_v0*/
 		    if(unblockedPcb != NULL){
