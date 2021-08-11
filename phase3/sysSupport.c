@@ -23,7 +23,7 @@ void generalSupHandler(){
 
 void supportSyscallHandler(state_t *genState){
     genState->pc_epc += 4;
-    switch(genState->reg_v0){
+    switch(genState->reg_a0){
         case TERMINATE:
         terminate();
         break;
@@ -37,10 +37,10 @@ void supportSyscallHandler(state_t *genState){
         Write_To_Terminal(genState->reg_a1, genState->reg_a2);
         break;
         case READTERMINAL:
-
+        Read_From_terminal(genState->reg_a1);
         break;
         default:
-
+        trapHandler(sPtr->sup_asid - 1);
         break;
     }
 }
@@ -121,8 +121,48 @@ void Write_To_Terminal(char *string, int len){
         sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = ~opStatus;
     }
     SYSCALL(VERHOGEN, &(supDevSem[2][sPtr->sup_asid - 1]), 0, 0);
-    FERMATIsys();
+  
     LDST(&(sPtr->sup_exceptState[GENERALEXCEPT]));
+}
+
+void Read_From_terminal(char *stringAddr){
+    if(stringAddr < 0x80000000 || stringAddr > 0xC0000000){
+        terminate();
+    }
+
+    static termreg_t *termRegRead;
+    termRegRead = getDevReg(TERMINT, sPtr->sup_asid - 1);
+    int opStatusRead, count = 0;
+    char receivedChar;
+    
+    SYSCALL(PASSEREN, &(supDevSem[3][sPtr->sup_asid - 1]), 0, 0);
+    
+    do{
+        setSTATUS(getSTATUS() & ~IECON);
+        termRegRead->recv_command = 2;
+        opStatusRead = SYSCALL(IOWAIT, TERMINT, sPtr->sup_asid - 1, 0);
+        setSTATUS(getSTATUS() & ~IECON);
+        receivedChar = (opStatusRead & 0xFF00) >> 8;
+
+        if((opStatusRead & 0xFF) != 5){
+            break;
+        }
+        count++;
+        stringAddr++;
+
+    }while(receivedChar != EOS);
+
+    if ( (opStatusRead & 0xFF) == 5) {
+        sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = count;
+
+    } else {
+        sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = ~opStatusRead;
+    }
+
+
+    SYSCALL(VERHOGEN, &(supDevSem[3][sPtr->sup_asid - 1]), 0, 0);
+    LDST(&(sPtr->sup_exceptState[GENERALEXCEPT]));
+
 }
 
 void trapHandler(int supSem){
