@@ -98,22 +98,24 @@ void Write_To_Terminal(char *string, int len){
 
     static termreg_t *termReg;
     termReg = getDevReg(TERMINT, sPtr->sup_asid - 1);
-    int opStatus;
+    static int opStatus;
 
     SYSCALL(PASSEREN, &(supDevSem[2][sPtr->sup_asid - 1]), 0, 0);
+    
     while(*string != EOS){
 
         setSTATUS(getSTATUS() & ~IECON);
         termReg->transm_command = 2 | ((*string) << 8);
         opStatus = SYSCALL(IOWAIT, TERMINT, sPtr->sup_asid - 1, 0);
-        setSTATUS(getSTATUS() & ~IECON);
+        setSTATUS(getSTATUS() & IECON);
         
         if((opStatus & 0xFF) != 5){
             break;
         }
         string++;
+        
     }
-
+    FERMATIsys();
     if ( (opStatus & 0xFF) == 5) {
         sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
 
@@ -133,23 +135,23 @@ void Read_From_terminal(char *stringAddr){
     static termreg_t *termRegRead;
     termRegRead = getDevReg(TERMINT, sPtr->sup_asid - 1);
     int opStatusRead, count = 0;
-    char receivedChar;
+    static char receivedChar;
     
     SYSCALL(PASSEREN, &(supDevSem[3][sPtr->sup_asid - 1]), 0, 0);
-    
+    FERMATIsys();
     do{
         setSTATUS(getSTATUS() & ~IECON);
         termRegRead->recv_command = 2;
-        opStatusRead = SYSCALL(IOWAIT, TERMINT, sPtr->sup_asid - 1, 0);
-        setSTATUS(getSTATUS() & ~IECON);
+        opStatusRead = SYSCALL(IOWAIT, TERMINT, sPtr->sup_asid - 1, 1);
+        setSTATUS(getSTATUS() & IECON);
         receivedChar = (opStatusRead & 0xFF00) >> 8;
-
+        *stringAddr = receivedChar;
         if((opStatusRead & 0xFF) != 5){
             break;
         }
         count++;
         stringAddr++;
-
+        FERMATIsys();
     }while(receivedChar != EOS);
 
     if ( (opStatusRead & 0xFF) == 5) {
