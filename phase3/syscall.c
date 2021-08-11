@@ -148,7 +148,7 @@ void terminate_ProcessRec(pcb_t *pcbPointer){
 void passeren(int* semAddrP){
     /*decremento semaforo*/
 	*semAddrP -= 1;
-
+	
     /*se la risorsa non è disponibile
      *blocca il pcb nella queue di semd_t
     */
