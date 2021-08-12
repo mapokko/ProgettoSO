@@ -47,10 +47,6 @@ void Pager(){
         poolTablePtr = pagingFIFO(&(frameAddr));
     }
     
-    
-    static int a01;
-    a01 = frameAddr;
-    
     if(poolTablePtr->sw_asid != -1){
 
         FERMATIvm();

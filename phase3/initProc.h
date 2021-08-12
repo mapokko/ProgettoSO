@@ -6,5 +6,6 @@
 
 void instantiatorProcess();
 void FERMATI();
+extern int masterSem;
 
 #endif

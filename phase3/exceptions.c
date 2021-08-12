@@ -47,9 +47,9 @@ void kernelExcHandler(){
 /* One can place debug calls here, but not calls to print */
 void uTLB_RefillHandler () {
 
-	static unsigned int entropy;
+	unsigned int entropy;
 	entropy = currentState->entry_hi;
-	static pteEntry_t *eccolo;
+	pteEntry_t *eccolo;
 
 	for(int i = 0; i < USERPGTBLSIZE; i++){
 		if(entropy == currentProcess->p_supportStruct->sup_privatePgTbl[i].pte_entryHI){

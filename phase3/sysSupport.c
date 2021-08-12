@@ -2,9 +2,8 @@
 #include "pandos_types.h"
 #include "interrupt.h"
 #include "vmSupport.h"
+#include "initProc.h"
 #include <umps3/umps/libumps.h>
-
-//support_t *sPtr;
 
 void generalSupHandler(){
     support_t *sPtr = SYSCALL(GETSUPPORTPTR, 0, 0, 0);
@@ -16,7 +15,7 @@ void generalSupHandler(){
         supportSyscallHandler(&(sPtr->sup_exceptState[GENERALEXCEPT]), sPtr);
     }
     else{
-        trapHandler(sPtr->sup_asid - 1);
+        trapHandler(sPtr->sup_asid - 1, sPtr);
     }
 }
 
@@ -24,7 +23,7 @@ void supportSyscallHandler(state_t *genState, support_t *sPtr){
     genState->pc_epc += 4;
     switch(genState->reg_a0){
         case TERMINATE:
-        terminate();
+        terminate(sPtr);
         break;
         case GET_TOD:
         getTOD(genState);
@@ -39,12 +38,18 @@ void supportSyscallHandler(state_t *genState, support_t *sPtr){
         Read_From_terminal(genState->reg_a1, sPtr);
         break;
         default:
-        trapHandler(sPtr->sup_asid - 1);
+        trapHandler(sPtr->sup_asid - 1, sPtr);
         break;
     }
 }
 
-void terminate(){
+void terminate(support_t *sPtr){
+    for(int i = 0; i < POOLSIZE; i++){
+        if(sPtr->sup_asid == swapPoolTable[i].sw_asid){
+            swapPoolTable[i].sw_asid = -1;
+        }
+    }
+    SYSCALL(VERHOGEN, &(masterSem), 0, 0);
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
@@ -55,8 +60,7 @@ void getTOD(state_t *suppState){
 
 void Write_To_Printer (char *string, int len, support_t *sPtr) {
      if(len>128 || len<1 || string < 0x80000000 || string > 0xC0000000 ){
-
-        SYSCALL(TERMPROCESS, 0, 0, 0);
+       terminate(sPtr);
     }
 
     dtpreg_t *printReg = getDevReg(PRNTINT, sPtr->sup_asid - 1);
@@ -92,7 +96,7 @@ void Write_To_Printer (char *string, int len, support_t *sPtr) {
 void Write_To_Terminal(char *string, int len, support_t *sPtr){
 
     if(len < 0 || len > 128 || string < 0x80000000 || string > 0xC0000000){
-        terminate();
+        terminate(sPtr);
     }
 
     termreg_t *termReg;
@@ -128,7 +132,7 @@ void Write_To_Terminal(char *string, int len, support_t *sPtr){
 
 void Read_From_terminal(char *stringAddr, support_t *sPtr){
     if(stringAddr < 0x80000000 || stringAddr > 0xC0000000){
-        terminate();
+        terminate(sPtr);
     }
 
     termreg_t *termRegRead;
@@ -169,13 +173,13 @@ void Read_From_terminal(char *stringAddr, support_t *sPtr){
 
 }
 
-void trapHandler(int supSem){
+void trapHandler(int supSem, support_t *sPtr){
     for(int i = 0; i < 4; i++){
         if(!(supDevSem[i][supSem])){
             SYSCALL(VERHOGEN, &(supDevSem[i][supSem]), 0, 0);
         }   
     }
-    terminate();
+    terminate(sPtr);
 }
 
 void FERMATIsys(){}
