@@ -6,6 +6,19 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
+pcb_t *readyQ;
+pcb_t *currentProcess;
+unsigned int processCount;
+unsigned int blockedCount;
+int devSem[4][8];
+int terSem[2][8];
+
+
+int pseudoClock;
+unsigned int processStartTime;
+devregarea_t *bus_devReg_Area;
+
+
 void main(){
 
     initSystem();
@@ -47,6 +60,7 @@ void initSystem(){
     bus_devReg_Area = RAMBASEADDR;
 
     /*interrupt timer a 100 millisecondi*/
+    //LDIT(PSECOND * (*((cpu_t *) TIMESCALEADDR)));
     LDIT(PSECOND);
 
 }
