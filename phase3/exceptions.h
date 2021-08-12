@@ -7,6 +7,7 @@ void kernelExcHandler();
 void memcpy(memaddr *src, memaddr *dest, unsigned int words);
 void uTLB_RefillHandler ();
 
-state_t *currentState;
+extern state_t *currentState;
+extern int excTOD;
 
 #endif

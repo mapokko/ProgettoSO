@@ -222,10 +222,14 @@ void wait_for_IO_Device(int devNumber, int devLine, int termReadFlag){
 
 /*SYSCALL 6*/
 void get_CPU_time(){
-    /*comunico al processo corrente il p_time
+    /*comunico al processo corrente il p_time 
+	 *a cui sommo il tempo passato per la gestione
+	 *dell'eccezione corrente
      *e restituisco il controllo
     */
-	currentState->reg_v0 = currentProcess->p_time;
+   	int currTOD;
+	STCK(currTOD);
+	currentState->reg_v0 = currentProcess->p_time + (currTOD - excTOD);
 	LDST(currentState);
 }
 

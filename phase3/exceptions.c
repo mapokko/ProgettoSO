@@ -9,13 +9,12 @@
  *usato in molte altre funzioni
 */
 state_t *currentState = BIOSDATAPAGE;
+int excTOD;
 
 /*gestore delle eccezioni*/
 void kernelExcHandler(){
-
-	//per vedere il motivo dell'eccezione decommentare sotto e cercare "temp" in umps3
-	static int temp;
-	temp = (currentState->cause & GETEXECCODE) >> 2;
+	STCK(excTOD);
+	
 
 	/*estraggo l' excCode e
 	 *cedo controllo al gestore specifico
@@ -48,8 +47,6 @@ void kernelExcHandler(){
 /* One can place debug calls here, but not calls to print */
 void uTLB_RefillHandler () {
 
-	//refill Handler forse funzionante, ancora da testare
-
 	static unsigned int entropy;
 	entropy = currentState->entry_hi;
 	static pteEntry_t *eccolo;
@@ -60,20 +57,16 @@ void uTLB_RefillHandler () {
 			break;
 		}
 	}
-	Fermati2();
+	
 	static int entrHI, entrLO;
 	entrHI = setENTRYHI(eccolo->pte_entryHI);
 	entrLO = setENTRYLO(eccolo->pte_entryLO);
 	TLBWR();
 
-		
-	// setENTRYHI(0x80000000);
-	// setENTRYLO(0x00000000);
-	// TLBWR();	
-	
 	LDST ((state_t *) 0x0FFFF000);
 	
 }
+
 
 /*funzione per copiare strutture*/
 void memcpy(memaddr *src, memaddr *dest, unsigned int bytes){
