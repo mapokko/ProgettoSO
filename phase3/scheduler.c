@@ -15,8 +15,8 @@ void scheduler(){
     */
     if(currentProcess != NULL){
         STCK(processStartTime);
-    
-        setTIMER(TIMESLICE);
+        
+        setTIMER(TIMESLICE * (*((cpu_t *) TIMESCALEADDR)));
         LDST(&(currentProcess->p_s));
     }
     /*se l'estrazione non è OK, accade uno di queste*/

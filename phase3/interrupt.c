@@ -47,10 +47,10 @@ void PLTHandler(){
 	
     /*inserisco pcb nel readyQ
      *e faccio ACK del PLT con
-     *valoer simboli e chiamo scheduler
+     *valore simboli e chiamo scheduler
     */
 	insertProcQ(&readyQ, currentProcess);
-	setTIMER(100000);
+	setTIMER(100000 * (*((cpu_t *) TIMESCALEADDR)));
 	scheduler();
 }
 
@@ -110,7 +110,7 @@ void terminalHandler(){
     /*dichiarazione variabili per eseguire la gestione*/
 	unsigned int interruptingDeviceNum, status;
     termreg_t *terminalRegister;
-	pcb_t *unblockedPcb = NULL;
+	pcb_t *unblockedPcb;
 
     /*estrazione del registro del terminale in interrupt*/
 	interruptingDeviceNum = getLine(getBitmap(TERMINT));
@@ -123,36 +123,32 @@ void terminalHandler(){
     
     /*2 cicli:
      *1: gestione interrupt da ricezione
-     *2: gestione interrutp da trasmissione
+     *2: gestione interrupt da trasmissione
     */
     for(int i = 0; i <= 1; i++){
+        unblockedPcb = NULL;
         /*se device non è busy*/
-        if((status & 0xff) != 3){
+        if((status & 0xff) != 3 && (status & 0xff) != 1){
             /*diamo ACK*/
             if(i == 0){
-                if((status & 0xff) == 5){
-                    terminalRegister->recv_command = 1;
-                } 
+                terminalRegister->recv_command = 1;
             }
             else{
-                if((status & 0xff) == 5){
-                    terminalRegister->transm_command = 1;
-                } 
+                terminalRegister->transm_command = 1;
             }
 
             /*V operation sul semaforo*/
-            if((status & 0xff) == 5){
-                unblockedPcb = verhogen(&(terSem[i][interruptingDeviceNum]));
-            }
+            unblockedPcb = verhogen(&(terSem[i][interruptingDeviceNum]));
 
-            /*se V operation OK, scrivo status nel registro reg_v0*/
+        }
+
+        
+        /*se V operation OK, scrivo status nel registro reg_v0*/
 		    if(unblockedPcb != NULL){
 		        unblockedPcb->p_s.reg_v0 = status;
             }
-        }
         /*passo a status della trasmissione*/
         status = terminalRegister->transm_status;
-        unblockedPcb = NULL;
     }
 	
     /*se c'è un processo in esecuzione, LDST()
