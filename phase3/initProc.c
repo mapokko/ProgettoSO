@@ -13,7 +13,7 @@ void initUPageTable(int ASID){
         supportTable[ASID].sup_privatePgTbl[i].pte_entryHI = ((0x80000 | i ) << VPNSHIFT) | ((ASID + 1) << ASIDSHIFT);
         supportTable[ASID].sup_privatePgTbl[i].pte_entryLO = DIRTYON;
     }
-    static unsigned int stackAddr;
+    unsigned int stackAddr;
     stackAddr = (0xBFFFF << VPNSHIFT) | ((ASID + 1) << ASIDSHIFT);
     FERMATI3();
     supportTable[ASID].sup_privatePgTbl[31].pte_entryHI = (0xBFFFF << VPNSHIFT) | ((ASID + 1) << ASIDSHIFT);
@@ -22,7 +22,7 @@ void initUPageTable(int ASID){
 }
 
 void initUProc(){
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < UPROCMAX; i++){
         state_t newState;
         newState.pc_epc = newState.reg_t9 = UPROCSTARTADDR;
         newState.reg_sp = USERSTACKTOP;

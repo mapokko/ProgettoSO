@@ -9,7 +9,9 @@ swap_t swapPoolTable[POOLSIZE];
 static memaddr swapPoolPtr;
 int swapPoolSem;
 static int fifoNo = -1;
+static int fifoNoS = POOLSIZE + 1;
 swap_t* pagingFIFO(memaddr *frame);
+swap_t* pagingFIFOstack(memaddr *frame);
 
 /*  i semafori di supporto sono così strutturati: (SOGGETTO AD EVENTUALE COMBIAMENTO)
     *i semafori supDevSem[0][0...7] definiscono i device flash (in ordine)
@@ -21,51 +23,60 @@ int supDevSem[4][8];
 void Pager(){
     support_t *sPtr = SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *exState = &(sPtr->sup_exceptState[PGFAULTEXCEPT]);
-    static unsigned int exCause;
+    unsigned int exCause;
     exCause = (exState->cause & GETEXECCODE) >> 2;
-
+    static int a00;
+    a00 = exCause;
     if(exCause == 1 ){
-
+        trapHandler(sPtr->sup_asid - 1);
     }
 
     SYSCALL(PASSEREN, &(swapPoolSem), 0, 0);
 
-    static int excPageNo;
-
+    int excPageNo;
+    memaddr frameAddr;
+    swap_t *poolTablePtr;
 
     excPageNo = (exState->entry_hi & GETPAGENO) >> VPNSHIFT;
 
     if(excPageNo == 0x3FFFF){
         excPageNo = 31;
+        poolTablePtr = pagingFIFOstack(&(frameAddr));
     }
-    static memaddr frameAddr;
-    static swap_t *poolTablePtr;
-    poolTablePtr = pagingFIFO(&(frameAddr));
-
+    else{
+        poolTablePtr = pagingFIFO(&(frameAddr));
+    }
+    
+    
+    static int a01;
+    a01 = frameAddr;
+    
     if(poolTablePtr->sw_asid != -1){
 
-
+        FERMATIvm();
         setSTATUS(getSTATUS() & ~IECON);
 
         poolTablePtr->sw_pte->pte_entryLO &= ~VALIDON;
         
         setENTRYHI(poolTablePtr->sw_pte->pte_entryHI);
         TLBP();
-        if(getINDEX() & PRESENTFLAG){
+        if(!(getINDEX() & PRESENTFLAG)){
+            setENTRYHI(poolTablePtr->sw_pte->pte_entryHI);
             setENTRYLO(poolTablePtr->sw_pte->pte_entryLO);
             TLBWI();
         }
 
         setSTATUS(getSTATUS() | IECON);
         
-        static int blockToUpload, PFNtoUpload;
+        int blockToUpload, PFNtoUpload;
 
         blockToUpload = (poolTablePtr->sw_pte->pte_entryHI & GETPAGENO) >> VPNSHIFT;
         if(blockToUpload == 0x3FFFF){
             blockToUpload = 31;
         }
 
-        PFNtoUpload = poolTablePtr->sw_pte->pte_entryLO & 0xFFFFF000;
+        //PFNtoUpload = poolTablePtr->sw_pte->pte_entryLO & 0xFFFFF000;
+        PFNtoUpload = frameAddr;
 
         RWflash(blockToUpload, PFNtoUpload, poolTablePtr->sw_asid - 1, FLASHWRITE);
 
@@ -81,13 +92,14 @@ void Pager(){
     setSTATUS(getSTATUS() & ~IECON);
     
     sPtr->sup_privatePgTbl[excPageNo].pte_entryLO = frameAddr | VALIDON | DIRTYON;
-    FERMATI();
+    
     updateTLB(&(sPtr->sup_privatePgTbl[excPageNo]));
+    FERMATIvm2();
 
     setSTATUS(getSTATUS() | IECON);
 
     SYSCALL(VERHOGEN, &(swapPoolSem), 0, 0);
-    FERMATI();
+    
     LDST(exState);
 
 }
@@ -120,8 +132,17 @@ swap_t* pagingFIFO(memaddr *frame){
 
     fifoNo++;
 
-    *frame = swapPoolPtr + (0x1000 * (fifoNo % POOLSIZE));
-    return &(swapPoolTable[fifoNo % POOLSIZE]);
+    *frame = swapPoolPtr + (0x1000 * (fifoNo % (POOLSIZE / 2)));
+    return &(swapPoolTable[fifoNo % (POOLSIZE / 2)]);
+}
+
+swap_t* pagingFIFOstack(memaddr *frame){
+    if(fifoNoS == (POOLSIZE / 2)){
+        fifoNoS = POOLSIZE + 1;
+    }
+    fifoNoS--;
+    *frame = swapPoolPtr + (0x1000 * (fifoNoS % (POOLSIZE)));
+    return &(swapPoolTable[fifoNoS % (POOLSIZE)]);
 }
 
 void updateTLB(pteEntry_t *entry){
@@ -165,3 +186,5 @@ void RWflash(int blockNo, memaddr ramAddr, int flashDevNo, int flag){
     SYSCALL(VERHOGEN, &(supDevSem[0][flashDevNo]), 0, 0);
 }
 
+void FERMATIvm(){};
+void FERMATIvm2(){};

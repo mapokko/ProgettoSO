@@ -5,6 +5,7 @@
 #define SYSSUPPORT_H_INCLUDED
 
 void generalSupHandler();
+void trapHandler(int supSem);
 
 
 #endif

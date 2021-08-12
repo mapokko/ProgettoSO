@@ -130,10 +130,14 @@ void terminalHandler(){
         if((status & 0xff) != 3){
             /*diamo ACK*/
             if(i == 0){
-                terminalRegister->recv_command = 1;
+                if((status & 0xff) == 5){
+                    terminalRegister->recv_command = 1;
+                } 
             }
             else{
-                terminalRegister->transm_command = 1;
+                if((status & 0xff) == 5){
+                    terminalRegister->transm_command = 1;
+                } 
             }
 
             /*V operation sul semaforo*/
