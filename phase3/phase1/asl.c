@@ -4,7 +4,8 @@
 #include <pandos_const.h>
 
 
-
+semd_t *semdFree_h, *semdFree_tail;
+semd_t *semd_h, *semd_tail;
 
 
 /*manteniamo un valore che corrisponde alla dimensione di un semaforo, usato per inizializzare la lista dei semafori liberi*/
@@ -13,17 +14,18 @@ static uint dimSemaforo = sizeof(semd_t);
 /*questa funzione inizializza tutti gli elementi della semd_table inserendoli nella lista dei semafori
   liberi alla cui testa punta semdFree_h e alla cui coda punta semdFree_tail. Notamo che i semfaori vengono
   inseriti nella coda e mentre vengono deallocato dalla testa*/
-extern void initASL(){
+void initASL(){
     /*allochiamo staticamente i semafori usando un array*/
     static semd_t semd_table[MAXPROC];
 
     //vengono inizializzati i puntatori alla testa e alla coda della lista dei semafori liberi
     semdFree_h = semdFree_tail = semd_table;
-    semdFree_h->s_procQ = semdFree_h->s_semAdd = NULL;
+    semdFree_h->s_procQ = NULL;
+    semdFree_h->s_semAdd = NULL;
 
     //viene effettuato un ciclo dove vengono inseriti tutti i semafori utilizando una funzion ausiliaria
     for(int i = 1; i < MAXPROC; i++){
-        freeSem((uint)semdFree_h + dimSemaforo * i);
+        freeSem((semd_t *)((uint)semdFree_h + dimSemaforo * i));
     }
 
     //infine si inizializzano a null l'ultimo elemnto della lista dei semafori liberi a anche i puntatori
@@ -34,7 +36,7 @@ extern void initASL(){
 
 /*questa funzione si occupa di inserire il pcb puntato da p nella coda dei pcb associato al semaforo a cui e' assegmato
   il valore passato per paramtro semAdd*/
-extern int insertBlocked(int *semAdd, pcb_t *p){
+int insertBlocked(int *semAdd, pcb_t *p){
     semd_t *semPtr;
 
     //usando una variabile intermedia e una funzione ausiliaria, viene verificato se è presente nella lista dei semafori
@@ -53,7 +55,7 @@ extern int insertBlocked(int *semAdd, pcb_t *p){
         //si inizializza la lista dei processi associati a semPtr usando una funzione per la manipolazione delle code di pcb
         semPtr->s_procQ = mkEmptyProcQ();
         //si inizializza la coda usando una funzione ausiliaria dei pcb
-        initTail(&(semPtr->s_procQ), p);
+        initTail((memaddr *)&(semPtr->s_procQ), p);
         //fatto ciò, si assegna il numero del semaforo al campo p_semAdd del pcb appena inserito
         p->p_semAdd = semAdd;
     }
@@ -65,7 +67,7 @@ extern int insertBlocked(int *semAdd, pcb_t *p){
 }
 
 /*questa funzione rimuove il primo pcb dalla coda dei pcb associato al semaforo identificato con il parametro passato*/
-extern pcb_t* removeBlocked(int *semAdd){
+pcb_t* removeBlocked(int *semAdd){
     //usiamo una variabile ausiliaria per verificare che sia effettivamente inserito un semaforo associato al parametro passato
     //verifichiamo inoltre che la sua coda dei processi sia vuota o meno
     semd_t *semPtr;
@@ -91,7 +93,7 @@ extern pcb_t* removeBlocked(int *semAdd){
 
 /*questa funzione estrae il pcb passato per argomento dalla coda dei pcb a cui è associato, il quale è individuato usando il semaforo
   a cui p è associato. Notiamo che p può trovarsi in qualunque posizione dentro la coda di pcb*/
-extern pcb_t* outBlocked(pcb_t *p){
+pcb_t* outBlocked(pcb_t *p){
     //usiamo una variabile ausiliaria per verificare che il semaforo associato a p sia presente nella lista dei semafori attivi
     //e che il pcb passato sia effettivamente associato ad una coda di pcb di un semaforo attivo
     semd_t *semPtr;
@@ -116,7 +118,7 @@ extern pcb_t* outBlocked(pcb_t *p){
 
 /*questa funzione restituisce un puntatore alla testa della coda di pcb associato al semaforo a cui è assegnato il valore passato per
   argomento nel suo campo s_semAdd*/
-extern pcb_t* headBlocked(int *semAdd){
+pcb_t* headBlocked(int *semAdd){
     //verifichiamo innanzitutto che il semaforo cercato è presente nella lista dei semafori attivi e che la coda dei processi associato
     //sia vuota o meno
     semd_t *semPtr;
@@ -153,7 +155,9 @@ void freeSem(semd_t *sem){
         semdFree_tail = sem;
     }
     //infine ne si neutralizzano i campi
-    sem->s_next = sem->s_procQ = sem->s_semAdd = NULL;
+    sem->s_next = NULL;
+    sem->s_procQ = NULL;
+    sem->s_semAdd = NULL;
     
 }
 
@@ -213,7 +217,7 @@ semd_t *allocASL(int *semAdd){
 
 /*questa funzione individua la posizione corretta all'interno della lista dei semafori attivi dove inserire il semaforo passato per
   parametro newSem, in modo che i semafori siano ordinato in modo ascendente in abse al campo s_semAdd*/
-void *insertSem(semd_t *newSem){
+void insertSem(semd_t *newSem){
     //verifichiamo innanzitutto se la lista è vuota o meno. Se è vuota viene inizializzato la lista dei de semafori attivi inserendo
     //il semaforo passato per parametro facendo punatare sia il puntatore alla testa che quello alla coda a newSem
     if(semd_h == NULL){

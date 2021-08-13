@@ -16,7 +16,7 @@ extern void initPcbs(){
 	//pcb che verranno manipolato nel corso del resto del programma
 	static pcb_t pcbFree_table[MAXPROC];
 
-	initHead(pcbFree_table);
+	initHead((memaddr *)pcbFree_table);
 
 	//pcbPoitner è un puntatore a pcb che serve per scorrere via via l'array di pcbFree_table in modo da puntare
 	//i processi in pcbFree_table
@@ -25,7 +25,7 @@ extern void initPcbs(){
 	for(int i = 1; i < MAXPROC; i++){
 		//in particolare, usiamo l'indirizzo di inizio da cui cominciano le celle di pcbFree_table e usiamo un offset
 		//via via crescente per identificare l'indirizzo dove cominciano le varie celle
-		pcbPointer = (uint) pcbFree_table + processo * i;
+		pcbPointer = (pcb_t *)((uint) pcbFree_table + processo * i);
 		//viene usata la funzione freePcb per inserire i vari pcb puntati da pcbPointer all'interno della lista di pcb libero
 		//la cui testa è puntata da pcbFree_h
 		freePcb(pcbPointer);
@@ -37,7 +37,7 @@ extern void freePcb(pcb_t *p){
 	//viene prima di tutto verificato se la lista dei pcb è completamente vuota, in tal caso si riutilizza la funzione per
 	//inizializzare la testa
 	if (pcbFree_h == NULL){
-		initHead(p);
+		initHead((memaddr *)p);
 		return;
 	}
 	//si resettano tutti i campi del pcb prima di reinserirlo nella lista dei pcb liberi
@@ -88,7 +88,7 @@ extern void insertProcQ(pcb_t **tp, pcb_t *p){
 	//viene verificato se il puntatore puntato da tp punta effettivamente a qualcosa o se deve essere inizializzata
 	if(emptyProcQ(*tp)){
 		//questa è una funzione che inizalizza il puntatore a una coda di processi
-		initTail(tp, p);
+		initTail((memaddr *)tp, p);
 		return;
 	}
 
@@ -237,7 +237,7 @@ extern pcb_t *outChild(pcb_t *p){
 /*questa funzione si occupa di impostare il puntatore pcbFree_h quando la lista dei pcb liberi è completamente vuota,
   ovvero pcbFree_h sta puntando a NULL*/
 void initHead(memaddr *pointer){
-	pcbFree_h = pointer;
+	pcbFree_h = (pcb_t *)pointer;
 	setPointers(pcbFree_h, NULL, 0);
 }
 
@@ -267,7 +267,7 @@ void setValues(pcb_t *pointer){
 /*questa funzione si occupa di inizializzare la coda dei processi la cui coda punta tailAddress, con il solo pcb puntato da p.
   In particolare il pcb puntato da p viene inizializzato con con i campi p_next e p_prev che puntano a se stesso*/
 void  initTail(memaddr *tailAddress, pcb_t *p){
-	*tailAddress = p;
+	*tailAddress = (memaddr)p;
 	setPointers(p, p, p);
 }
 

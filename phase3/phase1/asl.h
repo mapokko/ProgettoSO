@@ -4,8 +4,8 @@
 #include <pandos_const.h>
 
     /*creiamo 4 puntatori, alla testa e alla coda della lista dei semafori liberi, e alla testa e alla coda della lista dei semafori attivi*/
-    semd_t *semdFree_h, *semdFree_tail;
-    semd_t *semd_h, *semd_tail;
+    extern semd_t *semdFree_h, *semdFree_tail;
+    extern semd_t *semd_h, *semd_tail;
 
     /*funzioni di generazione e gestione dei semafori*/
     extern void initASL();
@@ -18,7 +18,7 @@
     void freeSem(semd_t *sem);
     semd_t *isInserted(int *semAdd);
     semd_t *allocASL(int *semAdd);
-    void *insertSem(semd_t *newSem);
+    void insertSem(semd_t *newSem);
     void removeSem(semd_t *semDel);
 
 #endif

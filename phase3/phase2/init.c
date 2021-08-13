@@ -1,3 +1,5 @@
+#include "phase1/pcb.h"
+#include "phase1/asl.h"
 #include "init.h"
 #include "exceptions.h"
 #include "scheduler.h"
@@ -17,6 +19,7 @@ int pseudoClock;
 unsigned int processStartTime;
 devregarea_t *bus_devReg_Area;
 
+void initSystem();
 
 void main(){
 
@@ -41,7 +44,7 @@ void main(){
 void initSystem(){
     /*inizializzazione passUp vector*/
     passupvector_t *passUpP0;
-    passUpP0 = (memaddr) PASSUPVECTOR;
+    passUpP0 = (passupvector_t *) PASSUPVECTOR;
     passUpP0->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     passUpP0->tlb_refill_stackPtr = (memaddr) KERNELSTACK;
     passUpP0->exception_handler = (memaddr) kernelExcHandler;
@@ -56,7 +59,7 @@ void initSystem(){
     blockedCount = 0;
     readyQ = mkEmptyProcQ();
     currentProcess = NULL;
-    bus_devReg_Area = RAMBASEADDR;
+    bus_devReg_Area = (devregarea_t *)RAMBASEADDR;
 
     /*interrupt timer a 100 millisecondi*/
     //LDIT(PSECOND * (*((cpu_t *) TIMESCALEADDR)));

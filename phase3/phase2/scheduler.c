@@ -1,7 +1,10 @@
 #include "scheduler.h"
 #include "init.h"
+#include "phase1/pcb.h"
+#include "phase1/asl.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
+#include <umps3/umps/libumps.h>
 
 
 

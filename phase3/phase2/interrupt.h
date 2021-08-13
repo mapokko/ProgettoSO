@@ -4,8 +4,8 @@
 #ifndef INTERRUPT_H_INCLUDED
 #define INTERRUPT_H_INCLUDED
 
-void interruptHandler();
-memaddr *getDevReg(int devNumber, int interruptingDeviceNumber);
+extern void interruptHandler();
+extern memaddr *getDevReg(int devNumber, int interruptingDeviceNumber);
 
 
 #endif
