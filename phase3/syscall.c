@@ -68,7 +68,6 @@ void create_Process(state_t *statep, support_t *supportp){
     /*inizializzo campi del pcb*/
 	newPcb->p_time = 0;
 	newPcb->p_semAdd = NULL;
-	newPcb->p_s.status = IEPON | TEBITON | IMON; //non so se questo status sia corretto per i nuovi pcb
 
     /*rendo il nuovo pcb figlio del pcb corrente
      *e inserisco il pcb nella readyQ
