@@ -78,4 +78,3 @@ void memcpy(memaddr *src, memaddr *dest, unsigned int bytes){
     }
 }
 
-void Fermati2(){};

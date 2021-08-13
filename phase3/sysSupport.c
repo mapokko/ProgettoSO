@@ -4,9 +4,16 @@
 #include "vmSupport.h"
 #include "initProc.h"
 #include <umps3/umps/libumps.h>
+void supportSyscallHandler(state_t *genState, support_t *sPtr);
+void terminate(support_t *sPtr);
+void getTOD(state_t *suppState);
+void Write_To_Printer (char *string, int len, support_t *sPtr);
+void Write_To_Terminal(char *string, int len, support_t *sPtr);
+void Read_From_terminal(char *stringAddr, support_t *sPtr);
+void trapHandler(int supSem, support_t *sPtr);
 
 void generalSupHandler(){
-    support_t *sPtr = SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    support_t *sPtr = (support_t *) SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     unsigned int genExCause;
     genExCause = (sPtr->sup_exceptState[GENERALEXCEPT].cause & GETEXECCODE) >> 2;
     
@@ -29,13 +36,13 @@ void supportSyscallHandler(state_t *genState, support_t *sPtr){
         getTOD(genState);
         break;
         case WRITEPRINTER:
-        Write_To_Printer(genState->reg_a1, genState->reg_a2, sPtr);
+        Write_To_Printer((char *)genState->reg_a1, genState->reg_a2, sPtr);
         break;
         case WRITETERMINAL:
-        Write_To_Terminal(genState->reg_a1, genState->reg_a2, sPtr);
+        Write_To_Terminal((char *)genState->reg_a1, genState->reg_a2, sPtr);
         break;
         case READTERMINAL:
-        Read_From_terminal(genState->reg_a1, sPtr);
+        Read_From_terminal((char *)genState->reg_a1, sPtr);
         break;
         default:
         trapHandler(sPtr->sup_asid - 1, sPtr);
@@ -49,7 +56,7 @@ void terminate(support_t *sPtr){
             swapPoolTable[i].sw_asid = -1;
         }
     }
-    SYSCALL(VERHOGEN, &(masterSem), 0, 0);
+    SYSCALL(VERHOGEN, (int)&(masterSem), 0, 0);
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
@@ -59,13 +66,13 @@ void getTOD(state_t *suppState){
 }
 
 void Write_To_Printer (char *string, int len, support_t *sPtr) {
-     if(len>128 || len<1 || string < 0x80000000 || string > 0xC0000000 ){
-       terminate(sPtr);
+    if(len > 128 || len < 1 || (int)string < 0x80000000 || (int)string > 0xC0000000 ){
+        terminate(sPtr);
     }
 
-    dtpreg_t *printReg = getDevReg(PRNTINT, sPtr->sup_asid - 1);
+    dtpreg_t *printReg = (dtpreg_t *)getDevReg(PRNTINT, sPtr->sup_asid - 1);
     int opStatusP = 0;
-    SYSCALL(PASSEREN, &(supDevSem[1][sPtr->sup_asid - 1]), 0, 0);
+    SYSCALL(PASSEREN, (int)&(supDevSem[1][sPtr->sup_asid - 1]), 0, 0);
 
     while(*string != EOS){
         printReg->data0 = *string;
@@ -89,24 +96,22 @@ void Write_To_Printer (char *string, int len, support_t *sPtr) {
         sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = ~opStatusP;
     }
 
-    SYSCALL(VERHOGEN, &(supDevSem[1][sPtr->sup_asid - 1]), 0, 0);
+    SYSCALL(VERHOGEN, (int)&(supDevSem[1][sPtr->sup_asid - 1]), 0, 0);
     LDST(&(sPtr->sup_exceptState[GENERALEXCEPT]));
 }
 
 void Write_To_Terminal(char *string, int len, support_t *sPtr){
 
-    if(len < 0 || len > 128 || string < 0x80000000 || string > 0xC0000000){
+    if(len > 128 || len < 1 || (int)string < 0x80000000 || (int)string > 0xC0000000 ){
         terminate(sPtr);
     }
 
-    termreg_t *termReg;
-    termReg = getDevReg(TERMINT, sPtr->sup_asid - 1);
+    termreg_t *termReg = (termreg_t *)getDevReg(TERMINT, sPtr->sup_asid - 1);
     int opStatus;
 
-    SYSCALL(PASSEREN, &(supDevSem[2][sPtr->sup_asid - 1]), 0, 0);
+    SYSCALL(PASSEREN, (int)&(supDevSem[2][sPtr->sup_asid - 1]), 0, 0);
     
     while(*string != EOS){
-        FERMATIsys();
         setSTATUS(getSTATUS() & ~IECON);
         termReg->transm_command = 2 | ((*string) << 8);
         opStatus = SYSCALL(IOWAIT, TERMINT, sPtr->sup_asid - 1, 0);
@@ -116,7 +121,6 @@ void Write_To_Terminal(char *string, int len, support_t *sPtr){
             break;
         }
         string++;
-        FERMATIsys();
     }
     
     if ( (opStatus & 0xFF) == 5) {
@@ -125,22 +129,21 @@ void Write_To_Terminal(char *string, int len, support_t *sPtr){
     } else {
         sPtr->sup_exceptState[GENERALEXCEPT].reg_v0 = ~opStatus;
     }
-    SYSCALL(VERHOGEN, &(supDevSem[2][sPtr->sup_asid - 1]), 0, 0);
+    SYSCALL(VERHOGEN, (int)&(supDevSem[2][sPtr->sup_asid - 1]), 0, 0);
   
     LDST(&(sPtr->sup_exceptState[GENERALEXCEPT]));
 }
 
 void Read_From_terminal(char *stringAddr, support_t *sPtr){
-    if(stringAddr < 0x80000000 || stringAddr > 0xC0000000){
+    if((int)stringAddr < 0x80000000 || (int)stringAddr > 0xC0000000){
         terminate(sPtr);
     }
 
-    termreg_t *termRegRead;
-    termRegRead = getDevReg(TERMINT, sPtr->sup_asid - 1);
+    termreg_t *termRegRead = (termreg_t *)getDevReg(TERMINT, sPtr->sup_asid - 1);
     int opStatusRead, count = 0;
-    char receivedChar = NULL;
+    char receivedChar;
     
-    SYSCALL(PASSEREN, &(supDevSem[3][sPtr->sup_asid - 1]), 0, 0);
+    SYSCALL(PASSEREN, (int)&(supDevSem[3][sPtr->sup_asid - 1]), 0, 0);
     
     
     while(receivedChar != '\n'){
@@ -168,7 +171,7 @@ void Read_From_terminal(char *stringAddr, support_t *sPtr){
     }
 
 
-    SYSCALL(VERHOGEN, &(supDevSem[3][sPtr->sup_asid - 1]), 0, 0);
+    SYSCALL(VERHOGEN, (int)&(supDevSem[3][sPtr->sup_asid - 1]), 0, 0);
     LDST(&(sPtr->sup_exceptState[GENERALEXCEPT]));
 
 }
@@ -176,10 +179,10 @@ void Read_From_terminal(char *stringAddr, support_t *sPtr){
 void trapHandler(int supSem, support_t *sPtr){
     for(int i = 0; i < 4; i++){
         if(!(supDevSem[i][supSem])){
-            SYSCALL(VERHOGEN, &(supDevSem[i][supSem]), 0, 0);
+            SYSCALL(VERHOGEN, (int)&(supDevSem[i][supSem]), 0, 0);
         }   
     }
     terminate(sPtr);
 }
 
-void FERMATIsys(){}
+

@@ -6,7 +6,7 @@
 
 extern swap_t swapPoolTable[POOLSIZE];
 extern int swapPoolSem;
-extern supDevSem[4][8];
+extern int supDevSem[4][8];
 void initSwapPool();
 
 void Pager();

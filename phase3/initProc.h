@@ -5,7 +5,6 @@
 #define INITPROC_H_INCLUDED
 
 void instantiatorProcess();
-void FERMATI();
 extern int masterSem;
 
 #endif

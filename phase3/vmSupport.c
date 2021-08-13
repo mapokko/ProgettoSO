@@ -18,83 +18,6 @@ swap_t *pagingAlgo(memaddr *frame, int blockNo);
     *i semafori supDevSem[3][0...7] definiscono i terminali in lettura (in ordine)*/
 int supDevSem[4][8];
 
-void Pager(){
-    support_t *sPtr = SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    state_t *exState = &(sPtr->sup_exceptState[PGFAULTEXCEPT]);
-    unsigned int exCause;
-    exCause = (exState->cause & GETEXECCODE) >> 2;
-    static int a00;
-    a00 = exCause;
-    if(exCause == 1 ){
-        trapHandler(sPtr->sup_asid - 1);
-    }
-
-    SYSCALL(PASSEREN, &(swapPoolSem), 0, 0);
-
-    int excPageNo;
-    memaddr frameAddr;
-    swap_t *poolTablePtr;
-
-    excPageNo = (exState->entry_hi & GETPAGENO) >> VPNSHIFT;
-
-    if(excPageNo == 0x3FFFF){
-        excPageNo = 31;
-    }
-
-    poolTablePtr = pagingAlgo(&(frameAddr), excPageNo);
-    
-    if(poolTablePtr->sw_asid != -1){
-
-        FERMATIvm();
-        setSTATUS(getSTATUS() & ~IECON);
-
-        poolTablePtr->sw_pte->pte_entryLO &= ~VALIDON;
-        
-        setENTRYHI(poolTablePtr->sw_pte->pte_entryHI);
-        TLBP();
-        if(!(getINDEX() & PRESENTFLAG)){
-            setENTRYHI(poolTablePtr->sw_pte->pte_entryHI);
-            setENTRYLO(poolTablePtr->sw_pte->pte_entryLO);
-            TLBWI();
-        }
-
-        setSTATUS(getSTATUS() | IECON);
-        
-        int blockToUpload, PFNtoUpload;
-
-        blockToUpload = (poolTablePtr->sw_pte->pte_entryHI & GETPAGENO) >> VPNSHIFT;
-        if(blockToUpload == 0x3FFFF){
-            blockToUpload = 31;
-        }
-
-        PFNtoUpload = poolTablePtr->sw_pte->pte_entryLO & 0xFFFFF000;
-
-        RWflash(blockToUpload, PFNtoUpload, poolTablePtr->sw_asid - 1, FLASHWRITE);
-
-    }
-    
-    RWflash(excPageNo, frameAddr, sPtr->sup_asid - 1, FLASHREAD);
-
-
-    poolTablePtr->sw_asid = sPtr->sup_asid;
-    poolTablePtr->sw_pageNo = excPageNo;
-    poolTablePtr->sw_pte = &(sPtr->sup_privatePgTbl[excPageNo]);
-
-    setSTATUS(getSTATUS() & ~IECON);
-    
-    sPtr->sup_privatePgTbl[excPageNo].pte_entryLO = frameAddr | VALIDON | DIRTYON;
-    
-    updateTLB(&(sPtr->sup_privatePgTbl[excPageNo]));
-    FERMATIvm2();
-
-    setSTATUS(getSTATUS() | IECON);
-
-    SYSCALL(VERHOGEN, &(swapPoolSem), 0, 0);
-    
-    LDST(exState);
-
-}
-
 memaddr swapPoolBegin(){
     return *((memaddr *)(KERNELSTACK + 0x0018)) + *((memaddr *)(KERNELSTACK + 0x0024));
 }
@@ -153,10 +76,10 @@ void updateTLB(pteEntry_t *entry){
 void RWflash(int blockNo, memaddr ramAddr, int flashDevNo, int flag){
 
 
-    SYSCALL(PASSEREN, &(supDevSem[0][flashDevNo]), 0, 0);
+    SYSCALL(PASSEREN, (int)&(supDevSem[0][flashDevNo]), 0, 0);
 
     dtpreg_t *devReg;
-    devReg = getDevReg(4, flashDevNo);
+    devReg = (dtpreg_t *) getDevReg(4, flashDevNo);
     devReg->data0 = ramAddr;
 
     setSTATUS(getSTATUS() & ~IECON);
@@ -172,8 +95,79 @@ void RWflash(int blockNo, memaddr ramAddr, int flashDevNo, int flag){
         /*chiamare gestore dei program trap*/
     }
 
-    SYSCALL(VERHOGEN, &(supDevSem[0][flashDevNo]), 0, 0);
+    SYSCALL(VERHOGEN, (int)&(supDevSem[0][flashDevNo]), 0, 0);
 }
 
-void FERMATIvm(){};
-void FERMATIvm2(){};
+
+void Pager(){
+    support_t *sPtr = (support_t *) SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    state_t *exState = &(sPtr->sup_exceptState[PGFAULTEXCEPT]);
+    unsigned int exCause;
+    exCause = (exState->cause & GETEXECCODE) >> 2;
+    if(exCause == 1 ){
+        trapHandler(sPtr->sup_asid - 1);
+    }
+
+    SYSCALL(PASSEREN, (int)&(swapPoolSem), 0, 0);
+
+    int excPageNo;
+    memaddr frameAddr;
+    swap_t *poolTablePtr;
+
+    excPageNo = (exState->entry_hi & GETPAGENO) >> VPNSHIFT;
+
+    if(excPageNo == 0x3FFFF){
+        excPageNo = 31;
+    }
+
+    poolTablePtr = pagingAlgo(&(frameAddr), excPageNo);
+    
+    if(poolTablePtr->sw_asid != -1){
+
+        setSTATUS(getSTATUS() & ~IECON);
+
+        poolTablePtr->sw_pte->pte_entryLO &= ~VALIDON;
+        
+        setENTRYHI(poolTablePtr->sw_pte->pte_entryHI);
+        TLBP();
+        if(!(getINDEX() & PRESENTFLAG)){
+            setENTRYHI(poolTablePtr->sw_pte->pte_entryHI);
+            setENTRYLO(poolTablePtr->sw_pte->pte_entryLO);
+            TLBWI();
+        }
+
+        setSTATUS(getSTATUS() | IECON);
+        
+        int blockToUpload, PFNtoUpload;
+
+        blockToUpload = (poolTablePtr->sw_pte->pte_entryHI & GETPAGENO) >> VPNSHIFT;
+        if(blockToUpload == 0x3FFFF){
+            blockToUpload = 31;
+        }
+
+        PFNtoUpload = poolTablePtr->sw_pte->pte_entryLO & 0xFFFFF000;
+
+        RWflash(blockToUpload, PFNtoUpload, poolTablePtr->sw_asid - 1, FLASHWRITE);
+
+    }
+    
+    RWflash(excPageNo, frameAddr, sPtr->sup_asid - 1, FLASHREAD);
+
+
+    poolTablePtr->sw_asid = sPtr->sup_asid;
+    poolTablePtr->sw_pageNo = excPageNo;
+    poolTablePtr->sw_pte = &(sPtr->sup_privatePgTbl[excPageNo]);
+
+    setSTATUS(getSTATUS() & ~IECON);
+    
+    sPtr->sup_privatePgTbl[excPageNo].pte_entryLO = frameAddr | VALIDON | DIRTYON;
+    
+    updateTLB(&(sPtr->sup_privatePgTbl[excPageNo]));
+
+    setSTATUS(getSTATUS() | IECON);
+
+    SYSCALL(VERHOGEN, (int)&(swapPoolSem), 0, 0);
+    
+    LDST(exState);
+
+}

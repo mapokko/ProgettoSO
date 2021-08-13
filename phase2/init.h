@@ -17,6 +17,6 @@ unsigned int processStartTime;
 devregarea_t *bus_devReg_Area;
 
 
-void FERMATI();
+
 
 #endif

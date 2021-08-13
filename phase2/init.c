@@ -52,6 +52,3 @@ void initSystem(){
 
 }
 
-
-
-void FERMATI(){;}

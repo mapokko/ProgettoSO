@@ -199,5 +199,3 @@ int getLine(int bitmap){
 memaddr *getDevReg(int devNumber, int interruptingDeviceNumber){
 	return DEVICEREGISTERBASE + ((devNumber - 3) * 0x80) + ((interruptingDeviceNumber) * 0x10);
 }
-
-FERMATIint(){}
