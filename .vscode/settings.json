@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "pandos_types.h": "c",
-        "interrupt.h": "c"
+        "interrupt.h": "c",
+        "pandos_const.h": "c"
     }
 }
