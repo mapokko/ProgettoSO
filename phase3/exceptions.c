@@ -2,13 +2,14 @@
 #include "scheduler.h"
 #include "init.h"
 #include "syscall.h"
+#include "interrupt.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
 
 /*puntatore a BIOSDATAPAGE
  *usato in molte altre funzioni
 */
-state_t *currentState = BIOSDATAPAGE;
+state_t *currentState = (state_t *)BIOSDATAPAGE;
 int excTOD;
 
 /*gestore delle eccezioni*/
@@ -47,20 +48,16 @@ void kernelExcHandler(){
 /* One can place debug calls here, but not calls to print */
 void uTLB_RefillHandler () {
 
-	unsigned int entropy;
-	entropy = currentState->entry_hi;
-	pteEntry_t *eccolo;
+	pteEntry_t *pageEntry;
 
 	for(int i = 0; i < USERPGTBLSIZE; i++){
-		if(entropy == currentProcess->p_supportStruct->sup_privatePgTbl[i].pte_entryHI){
-			eccolo = &(currentProcess->p_supportStruct->sup_privatePgTbl[i]);
+		if(currentState->entry_hi == currentProcess->p_supportStruct->sup_privatePgTbl[i].pte_entryHI){
+			pageEntry = &(currentProcess->p_supportStruct->sup_privatePgTbl[i]);
 			break;
 		}
 	}
-	
-	static int entrHI, entrLO;
-	entrHI = setENTRYHI(eccolo->pte_entryHI);
-	entrLO = setENTRYLO(eccolo->pte_entryLO);
+	setENTRYHI(pageEntry->pte_entryHI);
+	setENTRYLO(pageEntry->pte_entryLO);
 	TLBWR();
 
 	LDST ((state_t *) 0x0FFFF000);

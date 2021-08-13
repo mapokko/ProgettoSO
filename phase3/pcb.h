@@ -4,7 +4,7 @@
 #define PCB_H_INCLUDED
 
 /*puntatore alla lista dei pcb liberi*/
-pcb_t *pcbFree_h;
+extern pcb_t *pcbFree_h;
 
 /*funzioni di generazione, allocazione e deallocazione dei pcb*/
 extern void initPcbs();

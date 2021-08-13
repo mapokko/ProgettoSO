@@ -1,10 +1,24 @@
 #include "exceptions.h"
 #include "init.h"
+#include "pcb.h"
+#include "asl.h"
 #include "scheduler.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
+#include <umps3/umps/libumps.h>
 
+void create_Process(state_t *statep, support_t *supportp);
+void terminate_Process();
+void terminate_ProcessRec(pcb_t *pcbPointer);
+void passeren(int* semAddrP);
+void verhogenExternal(int *semAddrV);
 pcb_t *verhogen(int *semAddrV);
+void wait_for_IO_Device(int devNumber, int devLine, int termReadFlag);
+void get_CPU_time();
+void wait_clock();
+void get_support_data();
+void passUp_orDie(int contextPosition);
+void updateCPUtime();
 
 /*gestore delle SYSCALL*/
 void syscallHandler(){
@@ -16,16 +30,16 @@ void syscallHandler(){
     /*cedo controllo alla SYSCALL richiesta*/
 	switch (currentState->reg_a0){
 		case CREATEPROCESS: 
-		create_Process(currentState->reg_a1, currentState->reg_a2);
+		create_Process((state_t *)currentState->reg_a1, (support_t *)currentState->reg_a2);
 		break;
 		case TERMPROCESS: 
 		terminate_Process();
 		break;
 		case PASSEREN: 
-		passeren(currentState->reg_a1);
+		passeren((int *)currentState->reg_a1);
 		break;
 		case VERHOGEN: 
-		verhogenExternal(currentState->reg_a1);
+		verhogenExternal((int *)currentState->reg_a1);
 		break;
         case IOWAIT: 
 		wait_for_IO_Device(currentState->reg_a1, currentState->reg_a2, currentState->reg_a3);
@@ -62,7 +76,7 @@ void create_Process(state_t *statep, support_t *supportp){
 	}
 
     /*copio nel nuovo pcb i dati passati per parametro*/
-	memcpy(statep, &(newPcb->p_s), sizeof(state_t));
+	memcpy((memaddr *)statep, (memaddr *)&(newPcb->p_s), sizeof(state_t));
 	newPcb->p_supportStruct = supportp;
 
     /*inizializzo campi del pcb*/
@@ -152,7 +166,7 @@ void passeren(int* semAddrP){
     */
 	if(*semAddrP < 0){
         /*copio stato corrente per riprendere l'esecuzione*/
-        memcpy(currentState, &currentProcess->p_s, sizeof(state_t));
+        memcpy((memaddr *)currentState, (memaddr *)&currentProcess->p_s, sizeof(state_t));
         /*aggiorno il campo p_time*/
 		updateCPUtime();
 
@@ -202,7 +216,6 @@ pcb_t *verhogen(int *semAddrV){
 	return NULL;
 }
 
-
 /*SYSCALL 5*/
 void wait_for_IO_Device(int devNumber, int devLine, int termReadFlag){
 	
@@ -228,7 +241,7 @@ void get_CPU_time(){
     */
    	int currTOD;
 	STCK(currTOD);
-	currentState->reg_v0 = currentProcess->p_time + (currTOD - excTOD);
+	currentState->reg_v0 = (int)currentProcess->p_time + (currTOD - excTOD);
 	LDST(currentState);
 }
 
@@ -245,7 +258,7 @@ void get_support_data(){
     /*passo l'indirizzo della struttura di supporto
      *e restituisco il controllo
     */
-	currentState->reg_v0 = currentProcess->p_supportStruct;
+	currentState->reg_v0 = (int)currentProcess->p_supportStruct;
 	LDST(currentState);
 }
 
@@ -256,7 +269,7 @@ void passUp_orDie(int contextPosition){
 		terminate_Process();
 	}
     /*copio lo stato corrente nella posizione corretta*/
-	memcpy(currentState, &(currentProcess->p_supportStruct->sup_exceptState[contextPosition]), sizeof(state_t));
+	memcpy((memaddr *)currentState, (memaddr *)&(currentProcess->p_supportStruct->sup_exceptState[contextPosition]), sizeof(state_t));
     
     /*estraggo SP, status e PC dalla struttura di controllo*/
     unsigned int stackPtr, status, progCounter;
