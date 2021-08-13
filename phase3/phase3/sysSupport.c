@@ -1,6 +1,6 @@
 #include "pandos_const.h"
 #include "pandos_types.h"
-#include "interrupt.h"
+#include "phase2/interrupt.h"
 #include "vmSupport.h"
 #include "initProc.h"
 #include <umps3/umps/libumps.h>

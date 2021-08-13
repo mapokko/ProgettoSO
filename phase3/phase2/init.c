@@ -1,8 +1,7 @@
 #include "init.h"
 #include "exceptions.h"
 #include "scheduler.h"
-//#include "p2test.h"
-#include "initProc.h"
+#include "phase3/initProc.h"
 #include <pandos_types.h>
 #include <pandos_const.h>
 

@@ -20,10 +20,13 @@ SUPDIR = $(UMPS3_DIR_PREFIX)/share/umps3
 
 DEFS = ../h/const.h ../h/types.h ../h/pcb.h ../h/asl.h \
 	../h/init.h ../h/exceptions.h ../h/scheduler.h \
-	../h/syscall.h ../h/interrupt.h \
+	../h/syscall.h ../h/interrupt.h ../h/initProc.h \
+	../h/vmSupport.h ../h/sysSupport.h \
 	$(INCDIR)/libumps.h Makefile
 
-OBJS = init.o exceptions.o syscall.o interrupt.o scheduler.o asl.o pcb.o
+OBJS = phase2/init.o phase2/exceptions.o phase2/syscall.o phase2/interrupt.o \
+	phase2/scheduler.o phase1/asl.o phase1/pcb.o \
+	phase3/initProc.o phase3/vmSupport.o phase3/sysSupport.o
 
 CFLAGS = -ffreestanding -std=c99 -Wall -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls -I.
 
@@ -43,8 +46,8 @@ all: kernel.core.umps
 kernel.core.umps: kernel
 	$(EF) -k kernel
 
-kernel: initProc.o vmSupport.o sysSupport.o $(OBJS)
-	$(LD) $(LDCOREFLAGS) $(LIBDIR)/crtso.o initProc.o vmSupport.o sysSupport.o $(OBJS) $(LIBDIR)/libumps.o -o kernel
+kernel: $(OBJS)
+	$(LD) $(LDCOREFLAGS) $(LIBDIR)/crtso.o $(OBJS) $(LIBDIR)/libumps.o -o kernel
 
 
 %.o: %.c $(DEFS)
@@ -52,7 +55,7 @@ kernel: initProc.o vmSupport.o sysSupport.o $(OBJS)
 
 
 clean:
-	rm -f *.o term*.umps kernel kernel.*.umps
+	rm -f *.o term*.umps kernel kernel.*.umps */*.o
 
 
 distclean: clean
