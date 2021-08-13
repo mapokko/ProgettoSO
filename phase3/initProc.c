@@ -23,6 +23,7 @@ void initUPageTable(int ASID){
 }
 
 void initUProc(){
+    int createStatus;
     for(int i = 0; i < UPROCMAX; i++){
         state_t newState;
         newState.pc_epc = newState.reg_t9 = UPROCSTARTADDR;
@@ -39,7 +40,11 @@ void initUProc(){
 
         initUPageTable(i);
 
-        SYSCALL(CREATEPROCESS, (memaddr) &(newState), (memaddr) &(supportTable[i]), 0);
+        createStatus = SYSCALL(CREATEPROCESS, (memaddr) &(newState), (memaddr) &(supportTable[i]), 0);
+
+        if(createStatus){
+            SYSCALL(TERMPROCESS, 0, 0, 0);
+        }
     }
 }
 
