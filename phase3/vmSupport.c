@@ -8,10 +8,8 @@
 swap_t swapPoolTable[POOLSIZE];
 static memaddr swapPoolPtr;
 int swapPoolSem;
-static int fifoNo = -1;
-static int fifoNoS = POOLSIZE + 1;
-swap_t* pagingFIFO(memaddr *frame);
-swap_t* pagingFIFOstack(memaddr *frame);
+static int frameNo;
+swap_t *pagingAlgo(memaddr *frame, int blockNo);
 
 /*  i semafori di supporto sono così strutturati: (SOGGETTO AD EVENTUALE COMBIAMENTO)
     *i semafori supDevSem[0][0...7] definiscono i device flash (in ordine)
@@ -41,11 +39,9 @@ void Pager(){
 
     if(excPageNo == 0x3FFFF){
         excPageNo = 31;
-        poolTablePtr = pagingFIFOstack(&(frameAddr));
     }
-    else{
-        poolTablePtr = pagingFIFO(&(frameAddr));
-    }
+
+    poolTablePtr = pagingAlgo(&(frameAddr), excPageNo);
     
     if(poolTablePtr->sw_asid != -1){
 
@@ -71,8 +67,7 @@ void Pager(){
             blockToUpload = 31;
         }
 
-        //PFNtoUpload = poolTablePtr->sw_pte->pte_entryLO & 0xFFFFF000;
-        PFNtoUpload = frameAddr;
+        PFNtoUpload = poolTablePtr->sw_pte->pte_entryLO & 0xFFFFF000;
 
         RWflash(blockToUpload, PFNtoUpload, poolTablePtr->sw_asid - 1, FLASHWRITE);
 
@@ -113,7 +108,7 @@ void initSupSem(){
 }
 
 void initSwapPool(){
-    
+    frameNo = -1;
     swapPoolSem = 1;
     swapPoolPtr = swapPoolBegin();
 
@@ -124,21 +119,19 @@ void initSwapPool(){
     }
 }
 
-swap_t* pagingFIFO(memaddr *frame){
-
-    fifoNo++;
-
-    *frame = swapPoolPtr + (0x1000 * (fifoNo % (POOLSIZE / 2)));
-    return &(swapPoolTable[fifoNo % (POOLSIZE / 2)]);
-}
-
-swap_t* pagingFIFOstack(memaddr *frame){
-    if(fifoNoS == (POOLSIZE / 2)){
-        fifoNoS = POOLSIZE + 1;
+swap_t *pagingAlgo(memaddr *frame, int blockNo){
+    if(frameNo == ((POOLSIZE / 2) + 1)){
+        frameNo = -1;
     }
-    fifoNoS--;
-    *frame = swapPoolPtr + (0x1000 * (fifoNoS % (POOLSIZE)));
-    return &(swapPoolTable[fifoNoS % (POOLSIZE)]);
+    frameNo++;
+    if(blockNo != 31){
+        *frame = swapPoolPtr + (0x1000 * (frameNo % (POOLSIZE / 2)));
+        return &(swapPoolTable[frameNo % (POOLSIZE / 2)]);
+    }
+    else{
+        *frame = swapPoolPtr + (0x1000 * ((frameNo + (POOLSIZE / 2)) % POOLSIZE));
+        return &(swapPoolTable[(frameNo + (POOLSIZE / 2)) % POOLSIZE]);
+    }
 }
 
 void updateTLB(pteEntry_t *entry){
