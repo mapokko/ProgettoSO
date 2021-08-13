@@ -1,6 +1,4 @@
 #include "init.h"
-#include "pcb.h"
-#include "asl.h"
 #include "exceptions.h"
 #include "scheduler.h"
 //#include "p2test.h"
@@ -20,7 +18,6 @@ int pseudoClock;
 unsigned int processStartTime;
 devregarea_t *bus_devReg_Area;
 
-void initSystem();
 
 void main(){
 
@@ -32,7 +29,7 @@ void main(){
     processCount++;
     firstPcb->p_s.status = IEPON | IMON;
     RAMTOP(firstPcb->p_s.reg_sp);
-    firstPcb->p_s.pc_epc = firstPcb->p_s.reg_t9 = (int) instantiatorProcess;
+    firstPcb->p_s.pc_epc = firstPcb->p_s.reg_t9 = (memaddr) instantiatorProcess;
 
     /*inserimento del primo pcb nella readyQ e chiamata dello scheduler*/
     insertProcQ(&readyQ, firstPcb);
@@ -45,11 +42,11 @@ void main(){
 void initSystem(){
     /*inizializzazione passUp vector*/
     passupvector_t *passUpP0;
-    passUpP0 = (passupvector_t *) PASSUPVECTOR;
-    passUpP0->tlb_refill_handler = (int) uTLB_RefillHandler;
-    passUpP0->tlb_refill_stackPtr = (int) KERNELSTACK;
-    passUpP0->exception_handler = (int) kernelExcHandler;
-    passUpP0->exception_stackPtr = (int) KERNELSTACK;
+    passUpP0 = (memaddr) PASSUPVECTOR;
+    passUpP0->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
+    passUpP0->tlb_refill_stackPtr = (memaddr) KERNELSTACK;
+    passUpP0->exception_handler = (memaddr) kernelExcHandler;
+    passUpP0->exception_stackPtr = (memaddr) KERNELSTACK;
 
     /*inizializzazione strutture dati fase 1*/
     initPcbs();
@@ -60,7 +57,7 @@ void initSystem(){
     blockedCount = 0;
     readyQ = mkEmptyProcQ();
     currentProcess = NULL;
-    bus_devReg_Area = (devregarea_t *)RAMBASEADDR;
+    bus_devReg_Area = RAMBASEADDR;
 
     /*interrupt timer a 100 millisecondi*/
     //LDIT(PSECOND * (*((cpu_t *) TIMESCALEADDR)));

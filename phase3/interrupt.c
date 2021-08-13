@@ -1,5 +1,3 @@
-#include "pcb.h"
-#include "asl.h"
 #include "exceptions.h"
 #include "init.h"
 #include "scheduler.h"
@@ -7,14 +5,6 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
-void PLTHandler();
-void timerHandler();
-void IODeviceHandler(int devNumber);
-void terminalHandler();
-
-void checkCurrent();
-int getBitmap(int devNumber);
-int getLine(int bitmap);
 memaddr *getDevReg(int devNumber, int interruptingDeviceNumber);
 
 /*gestore degli interrupt*/
@@ -53,7 +43,7 @@ void PLTHandler(){
      *copio stato corrente
     */
 	updateCPUtime();
-	memcpy((memaddr *)currentState, (memaddr *)&(currentProcess->p_s), sizeof(state_t));
+	memcpy(currentState, &(currentProcess->p_s), sizeof(state_t));
 	
     /*inserisco pcb nel readyQ
      *e faccio ACK del PLT con
@@ -94,7 +84,7 @@ void IODeviceHandler(int devNumber){
     
     /*estrazione del registro del device in interrupt*/
     interruptingDeviceNum = getLine(getBitmap(devNumber));
-	deviceRegister = (dtpreg_t *)getDevReg(devNumber, interruptingDeviceNum);
+	deviceRegister = getDevReg(devNumber, interruptingDeviceNum);
 
     /*estrazione status dal device register*/
     status = deviceRegister->status;
@@ -124,7 +114,7 @@ void terminalHandler(){
 
     /*estrazione del registro del terminale in interrupt*/
 	interruptingDeviceNum = getLine(getBitmap(TERMINT));
-	terminalRegister = (termreg_t *)getDevReg(TERMINT, interruptingDeviceNum);
+	terminalRegister = getDevReg(TERMINT, interruptingDeviceNum);
 
     /*estrazione status della
      *ricezione dal device register
@@ -207,5 +197,5 @@ int getLine(int bitmap){
 
 /*calcola l'indirizzo dove comincia il device register*/
 memaddr *getDevReg(int devNumber, int interruptingDeviceNumber){
-	return (memaddr *)(DEVICEREGISTERBASE + ((devNumber - 3) * 0x80) + ((interruptingDeviceNumber) * 0x10));
+	return DEVICEREGISTERBASE + ((devNumber - 3) * 0x80) + ((interruptingDeviceNumber) * 0x10);
 }

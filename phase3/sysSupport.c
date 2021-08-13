@@ -62,7 +62,7 @@ void terminate(support_t *sPtr){
 
 void getTOD(state_t *suppState){
     STCK(suppState->reg_v0);
-    LDST(suppState);
+    LDST(suppState); /*serve????*/
 }
 
 void Write_To_Printer (char *string, int len, support_t *sPtr) {

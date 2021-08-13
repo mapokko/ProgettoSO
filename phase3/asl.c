@@ -3,15 +3,7 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
-semd_t *semdFree_h, *semdFree_tail;
-semd_t *semd_h, *semd_tail;
 
-/*funzioni di generazione e gestione dei semafori*/
-void initASL();
-int insertBlocked(int *semAdd, pcb_t *p);
-pcb_t* removeBlocked(int *semAdd);
-pcb_t* outBlocked(pcb_t *p);
-pcb_t* headBlocked(int *semAdd);
 
 
 
@@ -27,12 +19,11 @@ extern void initASL(){
 
     //vengono inizializzati i puntatori alla testa e alla coda della lista dei semafori liberi
     semdFree_h = semdFree_tail = semd_table;
-    semdFree_h->s_procQ = NULL;
-    semdFree_h->s_semAdd = NULL;
+    semdFree_h->s_procQ = semdFree_h->s_semAdd = NULL;
 
     //viene effettuato un ciclo dove vengono inseriti tutti i semafori utilizando una funzion ausiliaria
     for(int i = 1; i < MAXPROC; i++){
-        freeSem((semd_t *)((uint)semdFree_h + dimSemaforo * i));
+        freeSem((uint)semdFree_h + dimSemaforo * i);
     }
 
     //infine si inizializzano a null l'ultimo elemnto della lista dei semafori liberi a anche i puntatori
@@ -62,7 +53,7 @@ extern int insertBlocked(int *semAdd, pcb_t *p){
         //si inizializza la lista dei processi associati a semPtr usando una funzione per la manipolazione delle code di pcb
         semPtr->s_procQ = mkEmptyProcQ();
         //si inizializza la coda usando una funzione ausiliaria dei pcb
-        initTail((memaddr *)&(semPtr->s_procQ), p);
+        initTail(&(semPtr->s_procQ), p);
         //fatto ciò, si assegna il numero del semaforo al campo p_semAdd del pcb appena inserito
         p->p_semAdd = semAdd;
     }
@@ -162,9 +153,7 @@ void freeSem(semd_t *sem){
         semdFree_tail = sem;
     }
     //infine ne si neutralizzano i campi
-    sem->s_next = NULL;
-    sem->s_procQ = NULL;
-    sem->s_semAdd = NULL;
+    sem->s_next = sem->s_procQ = sem->s_semAdd = NULL;
     
 }
 
@@ -224,7 +213,7 @@ semd_t *allocASL(int *semAdd){
 
 /*questa funzione individua la posizione corretta all'interno della lista dei semafori attivi dove inserire il semaforo passato per
   parametro newSem, in modo che i semafori siano ordinato in modo ascendente in abse al campo s_semAdd*/
-void insertSem(semd_t *newSem){
+void *insertSem(semd_t *newSem){
     //verifichiamo innanzitutto se la lista è vuota o meno. Se è vuota viene inizializzato la lista dei de semafori attivi inserendo
     //il semaforo passato per parametro facendo punatare sia il puntatore alla testa che quello alla coda a newSem
     if(semd_h == NULL){
