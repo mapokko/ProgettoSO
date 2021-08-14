@@ -84,6 +84,9 @@ void instantiatorProcess(){
     for(int i = 0; i < UPROCMAX; i++){
         SYSCALL(PASSEREN, (int)&(masterSem), 0, 0);
     }
+
+    /*  una volta che tutti i processi saranno terminati, verrà effettuato un ultimo SYS4 dalla funzione di terminazione
+        e l'esecuzione giungerà qui, terminando il processo instanziatore*/
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
