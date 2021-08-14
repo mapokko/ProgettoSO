@@ -66,6 +66,8 @@
 #define DELAY         18
 #define PSEMVIRT      19
 #define VSEMVIRT      20
+#define REGULARTRAP   25
+#define BLOCKEDTRAP   20
 
 
 /* Status register constants */
@@ -87,6 +89,7 @@
 #define PRINTINTERRUPT 0x00004000
 #define TERMINTERRUPT  0x00008000
 #define IOINTERRUPTS   0
+#define TLBMODEXC      1
 #define TLBINVLDL      2
 #define TLBINVLDS      3
 #define SYSEXCEPTION   8
