@@ -44,22 +44,28 @@ void kernelExcHandler(){
 
 }
 
-/* TLB-Refill Handler */
-/* One can place debug calls here, but not calls to print */
+/* 	TLB-Refill Handler */
+/*	il controllo giunge qui quando si prova ad accedere ad un indirizzo virtuale che
+	non ha un corrispettivo nella TLB*/
 void uTLB_RefillHandler () {
 	pteEntry_t *pgTblEntry;
 
+	/*	si estrae la entry della page table dello U-proc associato all'indirizzo richesto*/
 	for(int i = 0; i < USERPGTBLSIZE; i++){
 		if(currentState->entry_hi == currentProcess->p_supportStruct->sup_privatePgTbl[i].pte_entryHI){
 			pgTblEntry = &(currentProcess->p_supportStruct->sup_privatePgTbl[i]);
 			break;
 		}
 	}
+
+	/*	si impostano i registri entryHi e entryLo del CP0 e
+		si scrivono in una entry random del TLB usndo TLBWR*/
 	setENTRYHI(pgTblEntry->pte_entryHI);
 	setENTRYLO(pgTblEntry->pte_entryLO);
 	TLBWR();
 
-	LDST ((state_t *) 0x0FFFF000);
+	/*	si restituisce il controllo al U-proc corrente*/
+	LDST (currentState);
 	
 }
 
