@@ -46,4 +46,4 @@ cap 4 descrive tutto ciò che si trova nel file sysSypport.c
 a questo cap ci penso io (fabio)
 
 - conclusioni finali
-  intro: strutturazione del file e del makefile
+  intro: strutturazione dei file e del makefile, difficoltà incontrate
