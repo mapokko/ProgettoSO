@@ -2,11 +2,6 @@
 #include <pandos_types.h>
 #include <pandos_const.h>
 
-/*processo è il valore usato per indicare la dimensione occupata da un pcb, ovvero la dimensione di una singola cella
-  dentro pcbFree_table. E' usato per calcolare l'offset per raggiungere i diversi inidirizzi in ci cominciano le
-  celle, ovvero i pcb di pcbFree_table*/
-static uint processo = sizeof(pcb_t);
-
 
 /*inizializza la lista dei pcb liberi aggiungendo tutti i pcb contenuti in pcbFree_table e alla testa
   di questa lista punta pcbFree_h. Notiamo che la lista dei pcb liberi è una lista monodirezionale collegata
@@ -18,17 +13,10 @@ extern void initPcbs(){
 
 	initHead((memaddr *)pcbFree_table);
 
-	//pcbPoitner è un puntatore a pcb che serve per scorrere via via l'array di pcbFree_table in modo da puntare
-	//i processi in pcbFree_table
-	pcb_t *pcbPointer;
-
-	for(int i = 1; i < MAXPROC; i++){
-		//in particolare, usiamo l'indirizzo di inizio da cui cominciano le celle di pcbFree_table e usiamo un offset
-		//via via crescente per identificare l'indirizzo dove cominciano le varie celle
-		pcbPointer = (pcb_t *)((uint) pcbFree_table + processo * i);
-		//viene usata la funzione freePcb per inserire i vari pcb puntati da pcbPointer all'interno della lista di pcb libero
-		//la cui testa è puntata da pcbFree_h
-		freePcb(pcbPointer);
+	for(int i = 0; i < MAXPROC; i++){
+		//facciamo delle chiamate progressive di freepcb passando come parametri l'indirizzo dei diversi
+		//pcb dichiarati con pcbFree_table, così che venga inizializzati
+		freePcb((pcb_t *)&(pcbFree_table[i]));
 	}
 }
 
