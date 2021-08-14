@@ -1,0 +1,49 @@
+qui scrivo l'idea su come strutturare la documentazione.
+
+anziché fare un breakdown di ciascun file, possiamo seguire come procede l'esecuzione, dunque:
+
+- capitolo 1: inizializzazione dei processi
+  intro: come si arriva all'inizializzaizone
+  sez 1: instantiator process
+  sez 2: inizializzazione della swap pool
+  sez 3: ecc.
+ 
+ in pratica tutto quello che fa di fatto il file initProc.c, perché è in effetti tutto quello che viene eseguito inizialmente
+ 
+ - capitolo 2: TLB refill event
+  intro: come si guinge al tlb refill event
+  sez 1: cosa fa il tlb refill evento del nostro progetto
+  sez 2: boh
+ 
+descriviamo cosa fa il tlb refill event scritto in exceptions.c
+
+- capitolo 3: Pager
+  intro: come si arriva al pager
+  sez 1: cosa fa il pager e come 
+  sez 2: algoritmo di paging
+  sez 3: azioni nel caso di scrittura nel flash device (RAM -> flash device)
+  sez 4: azioni per lettura dal flash device (RAM <- flash device)
+  sez 5: come aggiorniamo il TLB
+  sez 6: ecc.
+  
+descriviamo in pratica tutto quello che si trova in vmSupport.c seguendo l'ordine di esecuzione
+  
+- capitolo 4: General suport Handler
+  intro: come si arriva al general suport handler
+  sez 1: cosa fa il general suport handler e come lo fa
+  sez 2: support syscal handler, cosa a fa
+    sez 2.1: SYSCALL 9, cosa fa e come
+    ...
+    sez 2.5: SYSCALL 13: cosa fa e come
+  sez 3: trap handler
+  
+cap 4 descrive tutto ciò che si trova nel file sysSypport.c
+
+- capitolo 5: correzioni e cambiamento del codice di ph2
+  sez 1: correzioni; calcolo del PLT e miglioramento dei SYSCALL 6
+  sez 2: cambiamento; adattamento del terminalHandler per escludere i verhogen non necessari e non dare ACK a a tutti e due le linee del terminale
+  
+a questo cap ci penso io (fabio)
+
+- conclusioni finali
+  intro: strutturazione dei file e del makefile, difficoltà incontrate
