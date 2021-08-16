@@ -51,12 +51,12 @@ void uTLB_RefillHandler () {
 	pteEntry_t *pgTblEntry;
 
 	/*	si estrae la entry della page table dello U-proc associato all'indirizzo richesto*/
-	for(int i = 0; i < USERPGTBLSIZE; i++){
-		if(currentState->entry_hi == currentProcess->p_supportStruct->sup_privatePgTbl[i].pte_entryHI){
-			pgTblEntry = &(currentProcess->p_supportStruct->sup_privatePgTbl[i]);
-			break;
-		}
+	int index = (currentState->entry_hi & GETPAGENO) >> VPNSHIFT;
+	if(index ==  0x3FFFF){
+		index = 31;
 	}
+	
+	pgTblEntry = &(currentProcess->p_supportStruct->sup_privatePgTbl[index]);
 
 	/*	si impostano i registri entryHi e entryLo del CP0 e
 		si scrivono in una entry random del TLB usndo TLBWR*/
