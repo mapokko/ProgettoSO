@@ -55,7 +55,6 @@ void uTLB_RefillHandler () {
 	if(index ==  0x3FFFF){
 		index = 31;
 	}
-	
 	pgTblEntry = &(currentProcess->p_supportStruct->sup_privatePgTbl[index]);
 
 	/*	si impostano i registri entryHi e entryLo del CP0 e
