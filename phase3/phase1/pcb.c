@@ -92,8 +92,6 @@ da tp. In particolare si occupa di inizializzare la coda dei processi nel casoil
 	setPointers(tail, tail->p_next, p);
 	setPointers(p->p_prev, p, p->p_prev->p_prev);
 
-	//viene aggiornato il puntatore alla coda
-	*tp = p;
 }
 
 /*questa funzione prende un puntatore al puntatore alla coda di una coda dei processi e si occupa di ritornare un puntatore
