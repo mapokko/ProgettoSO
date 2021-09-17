@@ -3,7 +3,7 @@
 #include <pandos_const.h>
 
 
-
+void FERMATI(){;}
 
 /*processo è il valore usato per indicare la dimensione occupata da un pcb, ovvero la dimensione di una singola cella
   dentro pcbFree_table. E' usato per calcolare l'offset per raggiungere i diversi inidirizzi in ci cominciano le
