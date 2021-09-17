@@ -10,6 +10,8 @@
  *usato in molte altre funzioni
 */
 state_t *currentState = (state_t *)BIOSDATAPAGE;
+
+/*serve successivamente per una eventuale gestione del syscall 6*/
 int excTOD;
 
 /*gestore delle eccezioni*/
