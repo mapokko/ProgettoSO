@@ -51,6 +51,8 @@
 	//viene aggiornato il puntatore alla testa della lista dei pcb liberi
 	pcbFree_h = pcbFree_h->p_next;
 
+	//vengono impostato i valori del pcb da restituire
+	setValues(toReturn);
 	return toReturn;
 }
 
