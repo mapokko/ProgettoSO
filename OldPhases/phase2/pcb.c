@@ -63,6 +63,7 @@ extern pcb_t *allocPcb(){
 	//viene aggiornato il puntatore alla testa della lista dei pcb liberi
 	pcbFree_h = pcbFree_h->p_next;
 
+	setValues(toReturn);
 	return toReturn;
 }
 
